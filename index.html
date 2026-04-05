@@ -544,9 +544,11 @@ function renderAll() {
       <div class="explain-box"><strong>📘 指标说明：</strong><br>• <strong>困惑度</strong>：衡量文本用词的可预测性。值越高说明用词越随机、人类化；值过低说明词汇高度模式化（典型AI特征）。<br>• <strong>突发性</strong>：衡量句子长度变化幅度。人类写作通常长短句交错（突发性高）；AI倾向于均匀句式（突发性低）。<br>• <strong>模板词</strong>：AI大模型高频使用的过渡句与万能套话。命中越多，AI代写嫌疑越大。</div>
     </div>
     <div class="detail-grid">
-      <div class="detail-card"><h4>🔍 AI特征词清单</h4>
-        ${ai.templates.length ? ai.templates.map(w=>`<span class="keyword-tag" style="background:rgba(225,112,85,0.15);color:var(--danger);border-color:rgba(225,112,85,0.3);margin:3px;display:inline-block;">${escapeHtml(w)}</span>`).join('') : '<div style="color:var(--success);padding:8px;font-size:0.82em;">✅ 未检测到典型AI句式模板</div>'}
+      <div class="detail-card" style="grid-column: span 2;"><h4>🔍 AI 特征词清单</h4>
+        ${ai.templates.length ? ai.templates.map(w=>`<span class="keyword-tag" style="background:rgba(225,112,85,0.15);color:var(--danger);border-color:rgba(225,112,85,0.3);margin:3px;display:inline-block;">${escapeHtml(w)}</span>`).join('') : '<div style="color:var(--success);padding:8px;font-size:0.82em;">✅ 未检测到典型 AI 句式模板</div>'}
       </div>
+    </div>
+    <div class="detail-grid">
       <div class="detail-card"><h4>📊 逐段 AI 热力</h4>
         ${ai.paraDetails && ai.paraDetails.length > 0 ? ai.paraDetails.map((p,i)=>{
           const c = p.score > 60 ? 'var(--danger)' : p.score > 30 ? 'var(--warning)' : 'var(--success)';
