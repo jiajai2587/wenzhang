@@ -223,11 +223,14 @@
   </div>
 
   <div class="tabs">
-    <button class="tab active" data-tab="ai">🤖 AI检测</button>
+    <button class="tab active" data-tab="ai">🤖 AI 检测</button>
+    <button class="tab" data-tab="platform">📱 平台适配</button>
     <button class="tab" data-tab="traffic">📈 流量预测</button>
+    <button class="tab" data-tab="quality360">💎 质量 360</button>
     <button class="tab" data-tab="logic">🧠 逻辑性</button>
     <button class="tab" data-tab="sensitive">🛡️ 敏感违规</button>
     <button class="tab" data-tab="marketing">🛒 营销文</button>
+    <button class="tab" data-tab="polish">✨ 润色优化</button>
     <button class="tab" data-tab="report">📋 综合报告</button>
   </div>
 
@@ -259,10 +262,13 @@
 
   <div id="fullResults" style="margin-top:15px; display:none;">
     <div class="tab-content active" id="tab-ai"></div>
+    <div class="tab-content" id="tab-platform"></div>
     <div class="tab-content" id="tab-traffic"></div>
+    <div class="tab-content" id="tab-quality360"></div>
     <div class="tab-content" id="tab-logic"></div>
     <div class="tab-content" id="tab-sensitive"></div>
     <div class="tab-content" id="tab-marketing"></div>
+    <div class="tab-content" id="tab-polish"></div>
     <div class="tab-content" id="tab-report"></div>
   </div>
 </div>
@@ -358,6 +364,316 @@ function analyzeAI(text) {
     bur: Math.round(burScore), 
     templates: [...new Set(templateHits)], 
     paraDetails 
+  };
+}
+
+// ==================== 平台适配分析 ====================
+function analyzePlatform(text) {
+  const chars = text.replace(/\s/g, '');
+  const paraCount = splitParagraphs(text).length;
+  const avgParaLen = chars.length / (paraCount || 1);
+  const sents = splitSentences(text);
+  const hasEmojis = (text.match(/[🔥⚠️💡👉✨✅❌📊📈🎯]/g)||[]).length > 0;
+  const hasHashTags = (text.match(/#/g)||[]).length >= 2;
+  const isLongForm = chars.length > 500;
+  const hasQuestions = (text.match(/[？?]/g)||[]).length >= 2;
+  const hasLists = (text.match(/\d+\.|[\-\*•]\s/g)||[]).length >= 3;
+  const first = sents[0]||'';
+  const hasStrongHook = (first.match(/你 | 为什么 | 如何 | 揭秘 | 干货 | 痛点 | 真相 | 别再 | 终于/gi)?true:false);
+  const isProfessional = (text.match(/研究 | 数据 | 分析 | 结论 | 专业 | 深度 | 干货/gi)||[]).length >= 2;
+  const hasKeywords = (text.match(/SEO|关键词 | 搜索 | 排名 | 百度 | 谷歌/gi)||[]).length >= 1;
+  
+  // 今日头条
+  const tt = {
+    name: '今日头条',
+    icon: '📰',
+    features: ['资讯算法推荐', '强钩子开头', '中长篇幅', '情绪驱动'],
+    score: Math.min(95, 50 + (hasStrongHook?25:0) + (chars.length>300?15:0) + ((first.length>15&&first.length<35)?10:0) + ((text.match(/震惊 | 重磅 | 曝光 | 内幕/gi)||[]).length*5)),
+    advice: hasStrongHook ? '开头吸引力强，符合头条调性' : '建议前 30 字加入悬念/痛点/利益点',
+    coldStart: Math.min(100, 40 + (hasStrongHook?30:0) + (chars.length>400?20:0) + (hasEmojis?10:0)),
+    limitRisk: (text.match(/加微信 | 扫码 | 点击链接/gi)||[]).length > 0 ? '高' : (text.match(/最 | 第一 | 首选/gi)||[]).length > 0 ? '中' : '低'
+  };
+  
+  // 百家号
+  const bj = {
+    name: '百家号',
+    icon: '📘',
+    features: ['百度搜索加持', '权威内容偏好', '长尾流量', '专业度高'],
+    score: Math.min(95, 50 + (isProfessional?25:0) + (hasLists?15:0) + (isLongForm?15:0) + (hasKeywords?20:0)),
+    advice: isProfessional ? '专业度高，适合百家号受众' : '建议增加数据引用和权威来源',
+    coldStart: Math.min(100, 35 + (isProfessional?30:0) + (hasKeywords?25:0) + (hasLists?10:0)),
+    limitRisk: (text.match(/医疗 | 健康 | 财经 | 政治/gi)||[]).length > 0 ? '中' : '低'
+  };
+  
+  // SEO 优化
+  const seo = {
+    name: 'SEO 优化',
+    icon: '🔍',
+    features: ['关键词布局', '结构清晰', '长尾词覆盖', '内链友好'],
+    score: Math.min(95, 50 + (hasKeywords?30:0) + (hasLists?20:0) + (paraCount>=4?15:0) + (hasQuestions?10:0)),
+    advice: hasKeywords ? '关键词分布合理' : '建议在标题/首段/小标题中植入核心关键词',
+    coldStart: Math.min(100, 30 + (hasKeywords?35:0) + (hasLists?20:0) + (isLongForm?15:0)),
+    limitRisk: '低'
+  };
+  
+  // 公众号订阅号
+  const mp = {
+    name: '公众号订阅',
+    icon: '💬',
+    features: ['粉丝私域', '深度阅读', '情感共鸣', '品牌沉淀'],
+    score: Math.min(95, 50 + (isLongForm?20:0) + ((text.match(/你 | 我们 | 我/gi)||[]).length>5?15:0) + (hasLists?15:0) + ((text.match(/感谢 | 分享 | 故事 | 经历/gi)||[]).length>0?20:0)),
+    advice: '适合建立读者粘性，建议增加个人化表达',
+    coldStart: Math.min(100, 25 + ((text.match(/你 | 我们/gi)||[]).length>5?30:0) + (isLongForm?25:0) + ((text.match(/感谢 | 分享/gi)||[]).length>0?20:0)),
+    limitRisk: (text.match(/诱导分享 | 关注有礼/gi)||[]).length > 0 ? '高' : '低'
+  };
+  
+  // 学术期刊
+  const journal = {
+    name: '学术论文',
+    icon: '🎓',
+    features: ['严谨论证', '文献引用', '研究方法', '创新观点'],
+    score: Math.min(95, 50 + (isProfessional?30:0) + (hasLists?10:0) + ((text.match(/摘要 | 引言 | 方法 | 结果 | 讨论 | 结论 | 参考文献/gi)||[]).length>0?25:0) + ((text.match(/\[\d+\]|（\d+）/g)||[]).length>0?20:0)),
+    advice: isProfessional ? '学术性强，论证充分' : '需补充研究方法、数据来源和文献引用',
+    coldStart: Math.min(100, 20 + (isProfessional?40:0) + ((text.match(/摘要 | 引言 | 结论/gi)||[]).length>0?25:0)),
+    limitRisk: '低'
+  };
+  
+  // 小红书
+  const xhs = {
+    name: '小红书',
+    icon: '📕',
+    features: ['碎片化阅读', '情绪价值', 'Emoji 丰富', '话题标签'],
+    score: Math.min(95, 50 + (hasEmojis?20:0) + (hasHashTags?15:0) + (paraCount>=5&&avgParaLen<50?20:0) + (hasStrongHook?15:0)),
+    advice: hasEmojis ? '表情丰富，符合社区氛围' : '建议增加 Emoji 和#话题标签#',
+    coldStart: Math.min(100, 45 + (hasEmojis?25:0) + (hasHashTags?20:0) + (hasStrongHook?10:0)),
+    limitRisk: (text.match(/私信 | 加微信 | 购买链接/gi)||[]).length > 0 ? '高' : '低'
+  };
+  
+  // 知乎
+  const zh = {
+    name: '知乎',
+    icon: '📗',
+    features: ['问题驱动', '干货结构', '专业背书', '长尾流量'],
+    score: Math.min(95, 50 + (hasQuestions?25:0) + (isProfessional?20:0) + (hasLists?20:0) + (isLongForm?15:0)),
+    advice: hasQuestions ? '问题意识强，适合知乎体' : '建议以问题开篇，采用"总 - 分-总"结构',
+    coldStart: Math.min(100, 35 + (hasQuestions?30:0) + (isProfessional?20:0) + (hasLists?15:0)),
+    limitRisk: '低'
+  };
+  
+  const platforms = [tt, bj, seo, mp, journal, xhs, zh];
+  platforms.sort((a,b) => b.score - a.score);
+  
+  return {
+    platforms,
+    bestMatch: platforms[0],
+    avgColdStart: Math.round(platforms.reduce((s,p)=>s+p.coldStart,0)/platforms.length),
+    overallLimitRisk: platforms.filter(p=>p.limitRisk==='高').length>0?'高':platforms.filter(p=>p.limitRisk==='中').length>1?'中':'低'
+  };
+}
+
+// ==================== 质量 360 评估 ====================
+function analyzeQuality360(text) {
+  const chars = text.replace(/\s/g, '');
+  const paras = splitParagraphs(text);
+  const sents = splitSentences(text);
+  const paraCount = paras.length;
+  const avgParaLen = chars.length / (paraCount || 1);
+  const avgSentLen = chars.length / (sents.length || 1);
+  
+  // 原创性 (0-100)
+  const uniqueRatio = new Set(chars.split('')).size / (chars.length || 1);
+  const originality = Math.min(100, Math.round(uniqueRatio * 150 + (text.match(/我认为 | 我觉得 | 我的经验 | 亲身经历/gi)||[]).length * 10));
+  
+  // 信息密度 (0-100)
+  const infoDensity = Math.min(100, Math.round(100 - (avgParaLen / 3)));
+  
+  // 可读性 (0-100)
+  const readability = Math.min(100, Math.round(100 - Math.abs(avgSentLen - 25) * 2));
+  
+  // 结构化程度 (0-100)
+  const hasStructure = (text.match(/\d+\.|[①②③]|[一二三四五六七八九十][、.]|[•●○■□▪▫→⇒✓✔✗✘]/g)||[]).length;
+  const structure = Math.min(100, Math.round((hasStructure / (paraCount || 1)) * 30 + Math.min(paraCount * 10, 70)));
+  
+  // 情感共鸣 (0-100)
+  const emotionWords = text.match(/惊喜 | 震惊 | 感动 | 焦虑 | 兴奋 | 痛苦 | 热爱 | 讨厌 | 支持 | 反对 | 点赞 | 转发 | 绝了 | 救命 | 共鸣 | 理解 | 懂得/gi)||[];
+  const emotion = Math.min(100, Math.round(30 + emotionWords.length * 12));
+  
+  // 实用价值 (0-100)
+  const practicalWords = text.match(/方法 | 技巧 | 步骤 | 流程 | 模板 | 工具 | 资源 | 清单 | 攻略 | 指南/gi)||[];
+  const practical = Math.min(100, Math.round(25 + practicalWords.length * 15));
+  
+  // 传播潜力 (0-100)
+  const viralElements = (text.match(/[🔥⚠️💡]/g)||[]).length + (text.match(/#.*#/g)||[]).length + (text.match(/你 | 你们/gi)||[]).length;
+  const viral = Math.min(100, Math.round(30 + viralElements * 8));
+  
+  // 专业可信度 (0-100)
+  const professionalWords = text.match(/数据 | 研究 | 实验 | 调查 | 统计 | 报告 | 论文 | 专家 | 权威/gi)||[];
+  const hasNumbers = /\d+%|\d+ 万 |\d+ 亿|\d+\.\d+/g.test(text);
+  const professional = Math.min(100, Math.round(20 + professionalWords.length * 12 + (hasNumbers?20:0)));
+  
+  const quality360 = {
+    originality: { score: originality, label: '原创独特性', desc: '衡量内容的新颖度和个人特色', color: originality>70?'var(--success)':originality>40?'var(--warning)':'var(--danger)' },
+    infoDensity: { score: infoDensity, label: '信息密度', desc: '单位字数内的有效信息量', color: infoDensity>70?'var(--success)':infoDensity>40?'var(--warning)':'var(--danger)' },
+    readability: { score: readability, label: '可读性', desc: '文本易读程度和阅读流畅度', color: readability>70?'var(--success)':readability>40?'var(--warning)':'var(--danger)' },
+    structure: { score: structure, label: '结构化', desc: '内容组织和层次分明程度', color: structure>70?'var(--success)':structure>40?'var(--warning)':'var(--danger)' },
+    emotion: { score: emotion, label: '情感共鸣', desc: '引发读者情绪反应的能力', color: emotion>70?'var(--success)':emotion>40?'var(--warning)':'var(--danger)' },
+    practical: { score: practical, label: '实用价值', desc: '提供可操作方法和解决方案的程度', color: practical>70?'var(--success)':practical>40?'var(--warning)':'var(--danger)' },
+    viral: { score: viral, label: '传播潜力', desc: '被分享和转发的可能性', color: viral>70?'var(--success)':viral>40?'var(--warning)':'var(--danger)' },
+    professional: { score: professional, label: '专业可信', desc: '内容的专业性和可信度', color: professional>70?'var(--success)':professional>40?'var(--warning)':'var(--danger)' }
+  };
+  
+  const overallScore = Math.round((originality + infoDensity + readability + structure + emotion + practical + viral + professional) / 8);
+  
+  return {
+    dimensions: quality360,
+    overallScore,
+    level: overallScore>80?'卓越':overallScore>65?'优秀':overallScore>45?'良好':'待提升',
+    strengths: Object.entries(quality360).filter(([_,v])=>v.score>70).map(([k,v])=>v.label),
+    weaknesses: Object.entries(quality360).filter(([_,v])=>v.score<50).map(([k,v])=>v.label)
+  };
+}
+
+// ==================== 润色优化建议 ====================
+function analyzePolish(text) {
+  const suggestions = [];
+  const paras = splitParagraphs(text);
+  const sents = splitSentences(text);
+  
+  // AI 味检测与去味建议
+  const aiPatterns = ['首先，','其次，','最后，','总而言之','综上所述','值得注意的是','不可否认','在当今社会','随着科技的','不得不说','与此同时'];
+  const foundAiPatterns = aiPatterns.filter(p => text.includes(p));
+  if(foundAiPatterns.length > 0) {
+    suggestions.push({
+      type: 'ai',
+      priority: '高',
+      title: '🤖 去除 AI 机械味',
+      issues: foundAiPatterns.map(p => `"${p}"等模板化表达`),
+      solutions: [
+        '用口语化连接词替代："先说个事"/"再聊聊"/"最后提一嘴"',
+        '增加个人经历："我上周遇到个事儿..."/"有个朋友跟我说..."',
+        '使用反问句："你是不是也遇到过...？"/"有没有想过为什么...？"'
+      ]
+    });
+  }
+  
+  // 句式单一问题
+  const sentLens = sents.map(s => s.length);
+  const avgLen = sentLens.reduce((a,b)=>a+b,0)/(sentLens.length||1);
+  const variance = sentLens.reduce((s,l)=>s+Math.pow(l-avgLen,2),0)/(sentLens.length||1);
+  if(variance < 100 && sents.length > 3) {
+    suggestions.push({
+      type: 'sentence',
+      priority: '中',
+      title: '⚡ 打破句式单调',
+      issues: ['句子长度过于均匀，缺乏节奏变化'],
+      solutions: [
+        '长短句交错：用 2-3 个短句制造紧张感，再用长句展开说明',
+        '插入感叹句或设问句打破平铺直叙',
+        '适当使用破折号、括号增加语气停顿'
+      ]
+    });
+  }
+  
+  // 缺少具体案例
+  const hasExamples = text.match(/比如 | 例如 | 举个例子 | 像 | 如/gi)||[];
+  if(hasExamples.length < 2 && text.length > 200) {
+    suggestions.push({
+      type: 'example',
+      priority: '高',
+      title: '📚 增加具体案例',
+      issues: ['内容偏理论，缺少真实案例支撑'],
+      solutions: [
+        '添加个人亲身经历："我去年做 XX 项目时..."',
+        '引用行业典型案例："某知名公司曾..."',
+        '使用数据案例："数据显示，80% 的用户..."'
+      ]
+    });
+  }
+  
+  // 情感表达不足
+  const emotionWords = text.match(/太 | 真的 | 特别 | 非常 | 超级 | 简直 | 绝对 | 必须 | 一定/gi)||[];
+  if(emotionWords.length < 3 && text.length > 150) {
+    suggestions.push({
+      type: 'emotion',
+      priority: '中',
+      title: '💖 增强情感表达',
+      issues: ['语气过于客观冷静，缺乏感染力'],
+      solutions: [
+        '适度使用程度副词："真的太好用"/"简直是救星"',
+        '加入主观感受："我当时就惊呆了"/"真心推荐"',
+        '使用网络流行语增加亲近感（适度）'
+      ]
+    });
+  }
+  
+  // 互动引导缺失
+  const hasInteraction = text.match(/你 | 你们 | 大家 | 各位 | 评论区 | 留言 | 分享/gi)||[];
+  if(hasInteraction.length < 2) {
+    suggestions.push({
+      type: 'interaction',
+      priority: '中',
+      title: '🗣️ 增加互动引导',
+      issues: ['缺少与读者的直接对话和互动'],
+      solutions: [
+        '多用"你"直接与读者对话',
+        '结尾抛出问题："你怎么看？"/"有类似经历吗？"',
+        '引导评论："欢迎在评论区分享你的想法"'
+      ]
+    });
+  }
+  
+  // 开头不够吸引人
+  const firstSent = sents[0] || '';
+  const hookWords = firstSent.match(/你 | 为什么 | 如何 | 揭秘 | 干货 | 痛点 | 真相 | 别再 | 终于/gi)||[];
+  if(hookWords.length === 0 && firstSent.length > 10) {
+    suggestions.push({
+      type: 'hook',
+      priority: '高',
+      title: '🎣 优化开头钩子',
+      issues: ['首句平淡，无法在前 3 秒抓住注意力'],
+      solutions: [
+        '痛点开场："你是不是经常...？"',
+        '反常识结论："90% 的人都做错了..."',
+        '利益承诺："看完这篇，你将掌握..."'
+      ]
+    });
+  }
+  
+  // 排版优化
+  const longParas = paras.filter(p => p.length > 100);
+  if(longParas.length > 0) {
+    suggestions.push({
+      type: 'format',
+      priority: '低',
+      title: '📐 优化排版格式',
+      issues: [`存在${longParas.length}段超过 100 字的长段落`],
+      solutions: [
+        '每段控制在 3-5 行，手机屏幕更易阅读',
+        '关键信息加粗或使用 emoji 标记',
+        '适当使用空行分隔不同主题'
+      ]
+    });
+  }
+  
+  // 生成润色后的示例片段
+  const polishedExamples = [];
+  if(foundAiPatterns.length > 0) {
+    polishedExamples.push({
+      before: '首先，我们需要了解这个概念的定义。其次，我们要分析它的应用场景。',
+      after: '先说说这玩意儿到底是啥。再聊聊它在实际中咋用。'
+    });
+  }
+  if(emotionWords.length < 3) {
+    polishedExamples.push({
+      before: '这个工具的功能比较全面，性能表现不错。',
+      after: '这个工具真的太好用了！功能全到离谱，性能简直飞起！'
+    });
+  }
+  
+  return {
+    suggestions,
+    polishedExamples,
+    humanScore: Math.max(0, 100 - suggestions.filter(s=>s.priority==='高').length*15 - suggestions.filter(s=>s.priority==='中').length*8)
   };
 }
 
@@ -612,6 +928,10 @@ function renderAll() {
   ];
 
   // AI Tab
+  // 新增分析
+  const pf = analyzePlatform(text);
+  const q360 = analyzeQuality360(text);
+  const pl = analyzePolish(text);
   document.getElementById('tab-ai').innerHTML = `
     <div class="card" style="margin-bottom:12px;"><div class="card-title"><div class="icon">🤖</div> AI生成概率深度解析</div>
       <div style="display:grid;grid-template-columns:1fr 2fr;gap:15px;align-items:center;">
@@ -733,6 +1053,88 @@ function renderAll() {
       </ul>
     </div>`;
 
+
+  // Platform Tab
+  document.getElementById('tab-platform').innerHTML = `
+    <div class="card" style="margin-bottom:12px;"><div class="card-title"><div class="icon">📱</div> 多平台适配度分析</div>
+      <div style="text-align:center;font-size:1.4em;font-weight:700;color:var(--accent-light);margin:8px 0;">最佳匹配：<span style="color:${pf.bestMatch.score>70?'var(--success)':'var(--warning)'}">${pf.bestMatch.icon} ${pf.bestMatch.name}</span> (${pf.bestMatch.score}分)</div>
+      <div class="explain-box"><strong>📘 冷启动流量预测：</strong> 新账号/新内容首次发布预计获得 <strong style="color:var(--info)">${Math.round(pf.avgColdStart*1.5)}-${Math.round(pf.avgColdStart*3)}次浏览</strong> | 整体限流风险：<span style="color:${pf.overallLimitRisk==='高'?'var(--danger)':pf.overallLimitRisk==='中'?'var(--warning)':'var(--success)'}">${pf.overallLimitRisk}</span></div>
+    </div>
+    <div class="detail-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+      ${pf.platforms.map(p=>`
+        <div class="detail-card" style="border-left:3px solid ${p.score>70?'var(--success)':p.score>50?'var(--warning)':'var(--danger)'};">
+          <h4>${p.icon} ${p.name} <span style="float:right;color:${p.score>70?'var(--success)':p.score>50?'var(--warning)':'var(--danger)'}">${p.score}分</span></h4>
+          <div style="font-size:0.75em;color:var(--text-sec);margin:6px 0;">${p.features.join(' · ')}</div>
+          <div style="margin:8px 0;"><div style="font-size:0.75em;color:var(--text-sec);margin-bottom:3px;">适配建议</div><div style="font-size:0.82em;color:var(--text);">${p.advice}</div></div>
+          <div style="display:flex;justify-content:space-between;font-size:0.75em;margin-top:8px;padding-top:6px;border-top:1px dashed var(--border);">
+            <span style="color:var(--text-sec);">冷启动：<strong style="color:var(--info)">${p.coldStart}分</strong></span>
+            <span style="color:var(--text-sec);">限流风险：<strong style="color:${p.limitRisk==='高'?'var(--danger)':p.limitRisk==='中'?'var(--warning)':'var(--success)'}">${p.limitRisk}</strong></span>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+
+  // Quality 360 Tab
+  document.getElementById('tab-quality360').innerHTML = `
+    <div class="card" style="margin-bottom:12px;"><div class="card-title"><div class="icon">💎</div> 内容质量 360°全景评估</div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:15px;align-items:center;">
+        <div style="text-align:center;">${scoreCircle(q360.overallScore, q360.overallScore>80?'var(--success)':q360.overallScore>65?'var(--info)':q360.overallScore>45?'var(--warning)':'var(--danger)')}</div>
+        <div>
+          <div style="font-size:1.3em;font-weight:700;color:var(--accent-light);margin-bottom:6px;">${q360.level}</div>
+          <div style="font-size:0.85em;color:var(--text-sec);margin-bottom:8px;">综合评分：${q360.overallScore}/100</div>
+          <div style="font-size:0.8em;"><span style="color:var(--success);">✓ 优势维度：</span>${q360.strengths.length>0?q360.strengths.join('、'):'无明显优势'}</div>
+          <div style="font-size:0.8em;margin-top:4px;"><span style="color:var(--warning);">⚠ 待提升：</span>${q360.weaknesses.length>0?q360.weaknesses.join('、'):'各方面均衡'}</div>
+        </div>
+      </div>
+    </div>
+    <div class="detail-grid" style="grid-template-columns: repeat(2, 1fr); gap: 10px;">
+      ${Object.entries(q360.dimensions).map(([k,v])=>`
+        <div class="detail-card" style="padding:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:0.85em;font-weight:600;color:var(--text);">${v.label}</span>
+            <span style="font-size:1.1em;font-weight:700;color:${v.color}">${v.score}</span>
+          </div>
+          <div style="width:100%;height:6px;background:rgba(0,0,0,0.1);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:${v.score}%;background:${v.color};transition:width 0.6s;"></div>
+          </div>
+          <div style="font-size:0.7em;color:var(--text-sec);margin-top:4px;">${v.desc}</div>
+        </div>
+      `).join('')}
+    </div>`;
+
+  // Polish Tab
+  document.getElementById('tab-polish').innerHTML = `
+    <div class="card" style="margin-bottom:12px;"><div class="card-title"><div class="icon">✨</div> 人性化润色与去 AI 味</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;align-items:center;">
+        <div style="text-align:center;">${scoreCircle(pl.humanScore, pl.humanScore>80?'var(--success)':pl.humanScore>60?'var(--info)':pl.humanScore>40?'var(--warning)':'var(--danger)')}</div>
+        <div>
+          <div style="font-size:1.2em;font-weight:700;color:var(--accent-light);margin-bottom:6px;">人性化指数：${pl.humanScore}/100</div>
+          <div style="font-size:0.85em;color:var(--text-sec);">${pl.suggestions.filter(s=>s.priority==='高').length}个高优问题 · ${pl.suggestions.filter(s=>s.priority==='中').length}个中优问题 · ${pl.suggestions.filter(s=>s.priority==='低').length}个低优问题</div>
+        </div>
+      </div>
+    </div>
+    ${pl.suggestions.length>0 ? `<div class="card" style="margin-bottom:12px;"><div class="card-title">🔧 优化建议清单</div>
+      ${pl.suggestions.sort((a,b)=>{const order={'高':0,'中':1,'低':2};return order[a.priority]-order[b.priority];}).map(s=>`
+        <div style="padding:10px;margin:6px 0;background:rgba(0,0,0,0.05);border-radius:6px;border-left:3px solid ${s.priority==='高'?'var(--danger)':s.priority==='中'?'var(--warning)':'var(--info)'};">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <strong style="color:var(--text);font-size:0.9em;">${s.title}</strong>
+            <span style="font-size:0.75em;padding:2px 6px;border-radius:3px;background:${s.priority==='高'?'rgba(225,112,85,0.2)':s.priority==='中'?'rgba(253,203,110,0.2)':'rgba(9,132,227,0.2)'};color:${s.priority==='高'?'var(--danger)':s.priority==='中'?'var(--warning)':'var(--info)'};">${s.priority}优先级</span>
+          </div>
+          <div style="font-size:0.8em;color:var(--text-sec);margin-bottom:6px;"><strong>问题：</strong>${s.issues.join('；')}</div>
+          <div style="font-size:0.8em;color:var(--text);"><strong>解决方案：</strong><ul style="margin:4px 0 0 16px;line-height:1.6;">${s.solutions.map(sol=>`<li>${sol}</li>`).join('')}</ul></div>
+        </div>
+      `).join('')}
+    </div>` : '<div class="card"><div class="suggestion-item"><div class="suggestion-icon good">✓</div><div class="suggestion-text">✅ 内容已经非常人性化，无需额外优化！</div></div></div>'}
+    ${pl.polishedExamples.length>0 ? `<div class="card"><div class="card-title">📝 润色前后对比示例</div>
+      ${pl.polishedExamples.map(ex=>`
+        <div style="margin:8px 0;padding:10px;background:rgba(0,0,0,0.05);border-radius:6px;">
+          <div style="font-size:0.75em;color:var(--text-sec);margin-bottom:4px;">❌ 修改前（AI 味/平淡）</div>
+          <div style="font-size:0.85em;color:var(--text-sec);text-decoration:line-through;margin-bottom:6px;">${ex.before}</div>
+          <div style="font-size:0.75em;color:var(--success);margin-bottom:4px;">✅ 修改后（人性化/生动）</div>
+          <div style="font-size:0.85em;color:var(--success);">${ex.after}</div>
+        </div>
+      `).join('')}
+    </div>` : ''}`;
   // Traffic Tab
   document.getElementById('tab-traffic').innerHTML = `
     <div class="card" style="margin-bottom:12px;"><div class="card-title"><div class="icon">📈</div> 流量潜力预测</div>
