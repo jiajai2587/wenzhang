@@ -343,17 +343,99 @@ function analyzeTraffic(text) {
   const sents = splitSentences(text);
   const chars = text.replace(/\s/g,'');
   const first = sents[0]||'';
-  const hook = Math.min(100, (first.match(/你|为什么|如何|揭秘|干货|痛点|真相|别再|终于/gi)?35:10)+(first.length>15&&first.length<40?25:5)+(sents.length>2?15:0)+(text.match(/#|🔥|⚠️|💡|👉/g)?.length*5||0));
+  const hook = Math.min(100, (first.match(/你 | 为什么 | 如何 | 揭秘 | 干货 | 痛点 | 真相 | 别再 | 终于/gi)?35:10)+(first.length>15&&first.length<40?25:5)+(sents.length>2?15:0)+(text.match(/#|🔥|⚠️|💡|👉/g)?.length*5||0));
   const readability = Math.min(100, 100 - Math.abs((chars.length/(sents.length||1))-25)*1.5);
-  const emotion = Math.min(100, 30 + (chars.match(/惊喜|震惊|感动|焦虑|兴奋|痛苦|热爱|讨厌|支持|反对|点赞|转发|绝了|救命/gi)?.length||0)*8);
-  const structure = Math.min(100, (text.match(/\d+\.|[\-\*•]/g)?.length?15:5)+(text.match(/一|二|三|首先|其次|最后/gi)?.length*5||10)+(splitParagraphs(text).filter(p=>p.length<60).length/splitParagraphs(text).length*40||20));
+  const emotion = Math.min(100, 30 + (chars.match(/惊喜 | 震惊 | 感动 | 焦虑 | 兴奋 | 痛苦 | 热爱 | 讨厌 | 支持 | 反对 | 点赞 | 转发 | 绝了 | 救命/gi)?.length||0)*8);
+  const structure = Math.min(100, (text.match(/\d+\.|[\-\*•]/g)?.length?15:5)+(text.match(/一 | 二|三 | 首先 | 其次 | 最后/gi)?.length*5||10)+(splitParagraphs(text).filter(p=>p.length<60).length/splitParagraphs(text).length*40||20));
   const tier = (hook+readability+emotion+structure)/4;
   
+  // 基于真实数据动态计算平台匹配度
   const plats = [];
-  if(hook>60&&structure>60) plats.push({name:'小红书',score:88,reason:'碎片化+情绪钩子强+排版友好'});
-  if(readability>65&&splitParagraphs(text).length>=4) plats.push({name:'公众号',score:82,reason:'深度阅读+逻辑完整+适合长文'});
-  if(chars.length>300&&hook>50&&readability>55) plats.push({name:'今日头条',score:85,reason:'资讯算法偏好+强钩子开头+中长篇完播率高'});
-  if(splitParagraphs(text).length>=5&&readability>70) plats.push({name:'知乎',score:76,reason:'干货结构+专业度高+长尾流量好'});
+  const paraCount = splitParagraphs(text).length;
+  const avgParaLen = chars.length / (paraCount || 1);
+  const hasEmojis = (text.match(/[🔥⚠️💡👉✨✅❌📊📈🎯]/g)||[]).length > 0;
+  const hasHashTags = (text.match(/#/g)||[]).length >= 2;
+  const isLongForm = chars.length > 500;
+  const hasQuestions = (text.match(/[？?]/g)||[]).length >= 2;
+  const hasLists = (text.match(/\d+\.|[\-\*•]\s/g)||[]).length >= 3;
+  const hasStrongHook = hook > 60;
+  const isProfessional = (text.match(/研究 | 数据 | 分析 | 结论 | 专业 | 深度 | 干货/gi)||[]).length >= 2;
+  
+  // 小红书评分逻辑：碎片化、情绪钩子、emoji、标签
+  let xhsScore = 50;
+  if (hasStrongHook) xhsScore += 20;
+  if (hasEmojis) xhsScore += 15;
+  if (hasHashTags) xhsScore += 10;
+  if (paraCount >= 5 && avgParaLen < 50) xhsScore += 5;
+  if (emotion > 60) xhsScore += 10;
+  xhsScore = Math.min(98, Math.max(40, xhsScore));
+  if (xhsScore >= 70) {
+    plats.push({
+      name: '小红书',
+      score: xhsScore,
+      reason: `碎片化${paraCount>=5?'✓':'✗'} + 情绪钩子${hasStrongHook?'强':'一般'} + ${hasEmojis?'Emoji丰富':'需加表情'} + ${hasHashTags?'话题标签':'需加#标签'}`
+    });
+  }
+  
+  // 公众号评分逻辑：深度阅读、逻辑完整、长文
+  let mpScore = 50;
+  if (isLongForm) mpScore += 15;
+  if (readability > 65) mpScore += 20;
+  if (hasLists) mpScore += 15;
+  if (paraCount >= 4) mpScore += 10;
+  if (structure > 60) mpScore += 10;
+  mpScore = Math.min(98, Math.max(40, mpScore));
+  if (mpScore >= 65) {
+    plats.push({
+      name: '公众号',
+      score: mpScore,
+      reason: `深度阅读${isLongForm?'✓':'偏短'} + 逻辑${hasLists?'清晰':'待优化'} + ${paraCount>=4?'分段合理':'段落较少'} + 适合${chars.length>300?'中长文':'短文'}`
+    });
+  }
+  
+  // 今日头条评分逻辑：资讯算法、强钩子、完播率
+  let ttScore = 50;
+  if (hasStrongHook) ttScore += 25;
+  if (chars.length > 300) ttScore += 15;
+  if (readability > 55) ttScore += 15;
+  if (emotion > 50) ttScore += 10;
+  if (first.length > 20 && first.length < 35) ttScore += 10;
+  ttScore = Math.min(98, Math.max(40, ttScore));
+  if (ttScore >= 65) {
+    plats.push({
+      name: '今日头条',
+      score: ttScore,
+      reason: `资讯算法${hasStrongHook?'偏好':'需强化'} + ${first.length>15?'强钩子开头':'首句待优化'} + ${chars.length>300?'中长篇':'篇幅偏短'} + 完播率${readability>60?'高':'中'}`
+    });
+  }
+  
+  // 知乎评分逻辑：干货结构、专业度、长尾流量
+  let zhScore = 50;
+  if (hasLists) zhScore += 20;
+  if (isProfessional) zhScore += 20;
+  if (hasQuestions) zhScore += 15;
+  if (readability > 70) zhScore += 15;
+  if (paraCount >= 5) zhScore += 10;
+  zhScore = Math.min(98, Math.max(40, zhScore));
+  if (zhScore >= 60) {
+    plats.push({
+      name: '知乎',
+      score: zhScore,
+      reason: `干货${hasLists?'结构':'待完善'} + ${isProfessional?'专业度高':'需加强深度'} + ${hasQuestions?'问题驱动':'陈述为主'} + ${readability>70?'长尾流量好':'一般'}`
+    });
+  }
+  
+  // 如果没有平台达到阈值，添加一个默认建议
+  if (plats.length === 0) {
+    plats.push({
+      name: '全平台通用',
+      score: Math.round(tier),
+      reason: `综合评分${Math.round(tier)}分，建议先优化${hook<50?'开头钩子、':''}${readability<60?'可读性、':''}${structure<50?'结构排版、':''}再发布`
+    });
+  }
+  
+  // 按分数降序排序
+  plats.sort((a, b) => b.score - a.score);
 
   return { hook, readability, emotion, structure, tier, plats };
 }
