@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
 <title>自媒体内容检测工具 Pro Max</title>
 <style>
   :root {
@@ -151,6 +152,7 @@
     <div>
       <h1>🔍 自媒体内容检测工具 Pro Max</h1>
       <div style="font-size:0.85em; color:var(--text-sec); margin-top:2px;">AI检测 · 流量预测 · 逻辑诊断 · 合规审查 · 营销识别</div>
+      <div style="font-size:0.75em; color:var(--text-sec); margin-top:4px;">📧 联系我们：2742938881@qq.com | 微信：xiaoqi19860607</div>
     </div>
     <div class="header-controls">
       <button class="btn-icon" id="themeToggle" title="切换主题">🌙</button>
@@ -243,6 +245,14 @@
 </div>
 
 <script>
+// ==================== 安全工具 ====================
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 // ==================== 核心工具 ====================
 const splitParagraphs = t => t.split(/\n\s*\n|\n/).filter(p => p.trim().length > 0).map(p => p.trim());
 const splitSentences = t => t.split(/[。！？.!?;；\n]+/).filter(s => s.trim().length > 0).map(s => s.trim());
@@ -394,7 +404,7 @@ function renderAll() {
     </div>
     <div class="detail-grid">
       <div class="detail-card"><h4>🔍 AI特征词清单</h4>
-        ${ai.templates.length ? ai.templates.map(w=>`<span class="keyword-tag" style="background:rgba(225,112,85,0.15);color:var(--danger);border-color:rgba(225,112,85,0.3);margin:3px;display:inline-block;">${w}</span>`).join('') : '<div style="color:var(--success);padding:8px;font-size:0.82em;">✅ 未检测到典型AI句式模板</div>'}
+        ${ai.templates.length ? ai.templates.map(w=>`<span class="keyword-tag" style="background:rgba(225,112,85,0.15);color:var(--danger);border-color:rgba(225,112,85,0.3);margin:3px;display:inline-block;">${escapeHtml(w)}</span>`).join('') : '<div style="color:var(--success);padding:8px;font-size:0.82em;">✅ 未检测到典型AI句式模板</div>'}
       </div>
       <div class="detail-card"><h4>📊 逐段AI热力</h4>
         ${ai.paraDetails.map((p,i)=>{
@@ -447,7 +457,7 @@ function renderAll() {
       ${lg.coherence.map(c=>`<div class="detail-row" style="margin:5px 0;"><span style="width:55px;">${c.pair}</span><div style="flex:1;margin:0 8px;"><div class="detail-bar" style="height:6px;"><div class="detail-fill" style="width:${c.score}%;background:${c.score>40?'var(--success)':c.score>20?'var(--warning)':'var(--danger)'}"></div></div></div><span style="width:35px;text-align:right;">${c.score}%</span></div>`).join('')}
     </div>
     <div class="card"><div class="card-title">⚠️ 逻辑优化提示</div>
-      ${lg.issues.length ? lg.issues.map(i=>`<div class="suggestion-item"><div class="suggestion-icon warn">!</div><div class="suggestion-text">${i}</div></div>`).join('') : '<div class="suggestion-item"><div class="suggestion-icon good">✓</div><div class="suggestion-text">逻辑链条清晰，起承转合自然，论证层层递进。建议保持当前结构。</div></div>'}
+      ${lg.issues.length ? lg.issues.map(i=>`<div class="suggestion-item"><div class="suggestion-icon warn">!</div><div class="suggestion-text">${escapeHtml(i)}</div></div>`).join('') : '<div class="suggestion-item"><div class="suggestion-icon good">✓</div><div class="suggestion-text">逻辑链条清晰，起承转合自然，论证层层递进。建议保持当前结构。</div></div>'}
     </div>`;
 
   // Sensitive Tab
@@ -463,7 +473,7 @@ function renderAll() {
       </div>
     </div>
     ${sn.hits.length>0 ? `<div class="card"><div class="card-title">📍 触发定位详情</div>
-      ${sn.hits.map(h=>`<div class="trigger-item"><div class="trigger-loc">📌 第 ${h.para} 段触发 [${h.type}]</div><div class="trigger-context">"${h.context.replace(h.word, `<span class="trigger-word">${h.word}</span>`)}"</div><div style="margin-top:3px;font-size:0.75em;color:var(--text-sec);">所在段落开头：${h.fullPara}</div></div>`).join('')}
+      ${sn.hits.map(h=>`<div class="trigger-item"><div class="trigger-loc">📌 第 ${h.para} 段触发 [${h.type}]</div><div class="trigger-context">"${h.context.replace(h.word, `<span class="trigger-word">${escapeHtml(h.word)}</span>`)}"</div><div style="margin-top:3px;font-size:0.75em;color:var(--text-sec);">所在段落开头：${escapeHtml(h.fullPara)}</div></div>`).join('')}
       <div style="margin-top:10px;padding:8px;background:rgba(138,138,160,0.1);border-radius:6px;font-size:0.78em;color:var(--text-sec);line-height:1.5;">注：高亮词为系统匹配结果。实际发布请结合各平台最新《内容安全规范》人工复核上下文语境。</div>
     </div>` : `<div class="card"><div class="suggestion-item"><div class="suggestion-icon good">✓</div><div class="suggestion-text">✅ 全文未检测到高危违规词与广告法禁用词，内容安全合规，可直接发布。</div></div></div>`}`;
 
@@ -480,7 +490,7 @@ function renderAll() {
       </div>
     </div>
     ${mk.hits.length>0 ? `<div class="card"><div class="card-title">📍 营销触发定位</div>
-      ${mk.hits.map(h=>`<div class="trigger-item" style="border-color:var(--accent);"><div class="trigger-loc">📍 ${h.label} (第${h.para}段)</div><div class="trigger-context">"${h.context.replace(h.word, `<span class="trigger-word" style="background:rgba(108,92,231,0.2);color:var(--accent);border-color:var(--accent);padding:1px 3px;border-radius:3px;">${h.word}</span>`)}"</div><div style="margin-top:3px;font-size:0.75em;color:var(--text-sec);">段落片段：${h.fullPara}</div></div>`).join('')}
+      ${mk.hits.map(h=>`<div class="trigger-item" style="border-color:var(--accent);"><div class="trigger-loc">📍 ${h.label} (第${h.para}段)</div><div class="trigger-context">"${h.context.replace(h.word, `<span class="trigger-word" style="background:rgba(108,92,231,0.2);color:var(--accent);border-color:var(--accent);padding:1px 3px;border-radius:3px;">${escapeHtml(h.word)}</span>`)}"</div><div style="margin-top:3px;font-size:0.75em;color:var(--text-sec);">段落片段：${escapeHtml(h.fullPara)}</div></div>`).join('')}
     </div>` : `<div class="card"><div class="suggestion-item"><div class="suggestion-icon good">✓</div><div class="suggestion-text">✅ 营销浓度极低，内容以信息/情绪价值为主，非常适合自然流量分发。</div></div></div>`}`;
 
   // Report Tab
@@ -501,7 +511,7 @@ function renderAll() {
       </div>
     </div>
     <div class="card"><div class="card-title">🚀 动态优化清单 (按优先级排序)</div>
-      ${checklist.map(c=>`<div class="suggestion-item"><div class="suggestion-icon ${c.p==='高'?'bad':c.p==='中'?'warn':'good'}">${c.p}</div><div class="suggestion-text"><strong>[${c.cat}]</strong> ${c.txt}</div></div>`).join('')}
+      ${checklist.map(c=>`<div class="suggestion-item"><div class="suggestion-icon ${c.p==='高'?'bad':c.p==='中'?'warn':'good'}">${c.p}</div><div class="suggestion-text"><strong>[${escapeHtml(c.cat)}]</strong> ${escapeHtml(c.txt)}</div></div>`).join('')}
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-secondary" onclick="exportReport('txt')">📄 导出TXT</button>
         <button class="btn btn-secondary" onclick="exportReport('json')">📋 导出JSON</button>
