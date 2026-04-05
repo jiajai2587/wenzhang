@@ -98,6 +98,9 @@
   .para-score-item span { color: var(--text); font-weight: 600; }
 
   .detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 8px; }
+  .full-width-section { grid-column: 1 / -1; }
+  .para-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  
   .detail-card { background: var(--bg-input); border-radius: 8px; padding: 10px; border: 1px solid var(--border); }
   .detail-card h4 { font-size: 0.82em; color: var(--accent-light); margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
   .detail-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; font-size: 0.8em; }
@@ -543,13 +546,14 @@ function renderAll() {
       </div>
       <div class="explain-box"><strong>📘 指标说明：</strong><br>• <strong>困惑度</strong>：衡量文本用词的可预测性。值越高说明用词越随机、人类化；值过低说明词汇高度模式化（典型AI特征）。<br>• <strong>突发性</strong>：衡量句子长度变化幅度。人类写作通常长短句交错（突发性高）；AI倾向于均匀句式（突发性低）。<br>• <strong>模板词</strong>：AI大模型高频使用的过渡句与万能套话。命中越多，AI代写嫌疑越大。</div>
     </div>
-    <div class="detail-grid">
+    <div class="detail-grid full-width-section">
       <div class="detail-card" style="grid-column: span 2;"><h4>🔍 AI 特征词清单</h4>
         ${ai.templates.length ? ai.templates.map(w=>`<span class="keyword-tag" style="background:rgba(225,112,85,0.15);color:var(--danger);border-color:rgba(225,112,85,0.3);margin:3px;display:inline-block;">${escapeHtml(w)}</span>`).join('') : '<div style="color:var(--success);padding:8px;font-size:0.82em;">✅ 未检测到典型 AI 句式模板</div>'}
       </div>
     </div>
-    <div class="detail-grid">
-      <div class="detail-card"><h4>📊 逐段 AI 热力</h4>
+    <div class="detail-grid full-width-section">
+      <div class="detail-card" style="grid-column: span 2;"><h4>📊 逐段 AI 热力</h4>
+        <div class="para-grid">
         ${ai.paraDetails && ai.paraDetails.length > 0 ? ai.paraDetails.map((p,i)=>{
           const c = p.score > 60 ? 'var(--danger)' : p.score > 30 ? 'var(--warning)' : 'var(--success)';
           const tag = p.score > 60 ? 'tag-ai' : p.score > 30 ? 'tag-mixed' : 'tag-human';
@@ -559,7 +563,7 @@ function renderAll() {
           const displayBur = isNaN(p.bur) ? 0 : p.bur;
           const displayAiCount = isNaN(p.aiCount) ? 0 : p.aiCount;
           
-          return `<div class="para-item ${p.score>60?'ai-high':p.score>30?'ai-mid':'ai-low'}" style="margin-bottom:8px;padding:12px;border-radius:6px;background:rgba(0,0,0,0.05);border-left:3px solid ${c};">
+          return `<div class="para-item ${p.score>60?'ai-high':p.score>30?'ai-mid':'ai-low'}" style="margin-bottom:0;padding:12px;border-radius:8px;background:rgba(0,0,0,0.05);border-left:3px solid ${c};box-shadow:0 2px 8px rgba(0,0,0,0.1);">
             <div class="para-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
               <strong style="color:var(--text);font-size:0.9em;">段落 ${i+1}</strong>
               <span class="para-tag ${tag}" style="font-size:0.75em;padding:2px 8px;border-radius:3px;background:${c}22;color:${c};">${displayScore}% AI 概率</span>
@@ -575,6 +579,105 @@ function renderAll() {
             </div>
           </div>`;
         }).join('') : '<div style="color:var(--text-sec);padding:15px;text-align:center;font-size:0.85em;">暂无段落数据，请输入文本进行分析</div>'}
+        </div>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-card"><h4>🛡️ 限流检测详情</h4>
+        ${(() => {
+          const sensitiveRatio = sn.hits.length / (text.length / 100);
+          const marketingRatio = mk.score / 100;
+          const aiRisk = ai.score / 100;
+          const limitIndex = Math.round(Math.min(100, (sensitiveRatio * 40 + marketingRatio * 35 + aiRisk * 25) * 100));
+          const limitStatus = limitIndex > 60 ? '高危' : limitIndex > 30 ? '风险' : '安全';
+          const limitColor = limitIndex > 60 ? 'var(--danger)' : limitIndex > 30 ? 'var(--warning)' : 'var(--success)';
+          const isWater = text.split('').filter(c => c === '的' || c === '了' || c === '是').length / text.length > 0.15;
+          return `
+            <div style="text-align:center;margin:10px 0;"><div style="font-size:2em;font-weight:700;color:${limitColor}">${limitIndex}%</div><div style="font-size:0.8em;color:var(--text-sec);">限流指数</div></div>
+            <div class="detail-row"><span>限流状态</span><span style="color:${limitColor};font-weight:700;">${limitStatus === '安全' ? '✅ 安全' : limitStatus === '风险' ? '⚠️ 风险' : '🔴 高危'}</span></div>
+            <div class="detail-row"><span>口水文检测</span><span style="color:${isWater ? 'var(--warning)' : 'var(--success)'}">${isWater ? '⚠️ 可能存在' : '✅ 否'}</span></div>
+            <div class="detail-row"><span>敏感词密度</span><span>${sn.hits.length}个</span></div>
+            <div class="detail-row"><span>营销浓度</span><span>${mk.score}分</span></div>
+            <div class="detail-row"><span>AI 痕迹</span><span>${ai.score}%</span></div>
+            <div style="margin-top:8px;padding:8px;background:rgba(9,132,227,0.1);border-radius:6px;font-size:0.78em;color:var(--text-sec);line-height:1.5;">
+              <strong>💡 优化建议：</strong><br>
+              ${limitIndex > 50 ? '• 降低营销词汇密度，增加实用信息比例<br>' : ''}
+              ${sn.hits.length > 3 ? '• 检查并移除敏感/违规词汇<br>' : ''}
+              ${ai.score > 60 ? '• 增加个人观点和真实案例，减少 AI 模板感<br>' : ''}
+              ${isWater ? '• 精简冗余词汇，提升信息密度<br>' : ''}
+              ${limitIndex <= 30 ? '✅ 内容质量良好，可安全发布' : ''}
+            </div>
+          `;
+        })()}
+      </div>
+      <div class="detail-card"><h4>📝 标题合规检测详情</h4>
+        ${(() => {
+          const firstPara = text.split('\n').find(p => p.trim().length > 0) || '';
+          const titleLen = firstPara.length;
+          const hasClickbait = /震惊 | 重磅 | 曝光 | 揭秘 | 内幕 | 必看 | 速看 | 删前|赶紧 | 立即 | 最后/g.test(firstPara);
+          const hasAbsolute = /最 | 第一 | 绝对 | 唯一 | 永久 | 100%|包治 | 根治 | 稳赚/g.test(firstPara);
+          const hasEmojis = /[🔥⚠️💡✨✅❌🎯]/g.test(firstPara);
+          const titleScore = Math.max(0, 100 - (hasClickbait ? 30 : 0) - (hasAbsolute ? 40 : 0) - (titleLen > 50 ? 20 : 0) + (hasEmojis ? 10 : 0));
+          const titleStatus = titleScore > 80 ? '优秀' : titleScore > 60 ? '良好' : titleScore > 40 ? '一般' : '较差';
+          const titleColor = titleScore > 80 ? 'var(--success)' : titleScore > 60 ? 'var(--info)' : titleScore > 40 ? 'var(--warning)' : 'var(--danger)';
+          return `
+            <div style="text-align:center;margin:10px 0;"><div style="font-size:2em;font-weight:700;color:${titleColor}">${titleScore}分</div><div style="font-size:0.8em;color:var(--text-sec);">合规评分</div></div>
+            <div class="detail-row"><span>标题状态</span><span style="color:${titleColor};font-weight:700;">${titleStatus}</span></div>
+            <div class="detail-row"><span>标题长度</span><span>${titleLen}字 ${titleLen > 50 ? '(偏长)' : titleLen < 10 ? '(偏短)' : '(适中)'}</span></div>
+            <div class="detail-row"><span>标题党词汇</span><span style="color:${hasClickbait ? 'var(--danger)' : 'var(--success)'}">${hasClickbait ? '⚠️ 检测到' : '✅ 无'}</span></div>
+            <div class="detail-row"><span>绝对化用语</span><span style="color:${hasAbsolute ? 'var(--danger)' : 'var(--success)'}">${hasAbsolute ? '⚠️ 检测到' : '✅ 无'}</span></div>
+            <div class="detail-row"><span>Emoji 使用</span><span>${hasEmojis ? '✅ 已使用' : 'ℹ️ 未使用'}</span></div>
+            <div style="margin-top:8px;padding:8px;background:rgba(9,132,227,0.1);border-radius:6px;font-size:0.78em;color:var(--text-sec);line-height:1.5;">
+              <strong>💡 优化建议：</strong><br>
+              ${hasClickbait ? '• 避免使用夸大/误导性词汇，保持标题真实准确<br>' : ''}
+              ${hasAbsolute ? '• 移除绝对化用语，改用客观描述<br>' : ''}
+              ${titleLen > 50 ? '• 精简标题至 30 字以内，提升点击率<br>' : ''}
+              ${titleLen < 10 ? '• 适当补充关键信息，增强吸引力<br>' : ''}
+              ${!hasEmojis ? '• 可添加 1-2 个 Emoji 提升视觉吸引力<br>' : ''}
+              ${titleScore > 80 ? '✅ 标题合规性优秀，可直接使用' : ''}
+            </div>
+          `;
+        })()}
+      </div>
+      <div class="detail-card" style="grid-column: span 2;"><h4>💡 AI 内容深度状态</h4>
+        ${(() => {
+          const wordCount = text.replace(/\s/g, '').length;
+          const uniqueWords = new Set(text.replace(/[^\u4e00-\u9fa5a-zA-Z]/g, '').split('')).size;
+          const vocabRichness = uniqueWords / (wordCount || 1);
+          const hasData = /\d+%|\d+ 万|\d+ 千|\d+ 亿|\d+ 元|\d+ 次/g.test(text);
+          const hasCase = /例如 | 比如 | 案例 | 实例 | 故事 | 经历/g.test(text);
+          const hasStructure = /首先 | 其次 | 最后 | 总结 | 总之 | 综上所述/g.test(text);
+          const hasOpinion = /我认为 | 我觉得 | 个人 | 观点 | 看法/g.test(text);
+          const depthScore = Math.round(vocabRichness * 30 + (hasData ? 20 : 0) + (hasCase ? 20 : 0) + (hasStructure ? 15 : 0) + (hasOpinion ? 15 : 0));
+          const depthStatus = depthScore > 80 ? '优秀' : depthScore > 60 ? '良好' : depthScore > 40 ? '一般' : '较差';
+          const depthDesc = depthScore > 80 ? '内容丰富且深度足够' : depthScore > 60 ? '内容较充实，有一定深度' : depthScore > 40 ? '内容基础，需补充细节' : '内容单薄，缺乏深度';
+          const depthColor = depthScore > 80 ? 'var(--success)' : depthScore > 60 ? 'var(--info)' : depthScore > 40 ? 'var(--warning)' : 'var(--danger)';
+          return `
+            <div style="display:grid;grid-template-columns:1fr 2fr;gap:15px;align-items:center;">
+              <div style="text-align:center;"><div style="font-size:2.5em;font-weight:700;color:${depthColor}">${depthScore}分</div><div style="font-size:0.9em;color:var(--text-sec);margin-top:5px;">${depthStatus}</div></div>
+              <div>
+                <div style="font-size:1.1em;color:var(--text);margin-bottom:8px;">${depthDesc}</div>
+                <div class="detail-row"><span>词汇丰富度</span><span>${Math.round(vocabRichness * 100)}%</span></div>
+                <div class="detail-row"><span>数据/案例支持</span><span style="color:${hasData && hasCase ? 'var(--success)' : 'var(--warning)'}">${hasData && hasCase ? '✅ 充足' : hasData || hasCase ? '⚠️ 部分' : '❌ 缺失'}</span></div>
+                <div class="detail-row"><span>结构完整性</span><span style="color:${hasStructure ? 'var(--success)' : 'var(--warning)'}">${hasStructure ? '✅ 清晰' : '⚠️ 待完善'}</span></div>
+                <div class="detail-row"><span>观点独创性</span><span style="color:${hasOpinion ? 'var(--success)' : 'var(--warning)'}">${hasOpinion ? '✅ 有个人观点' : '⚠️ 以陈述为主'}</span></div>
+              </div>
+            </div>
+            <div style="margin-top:10px;padding:8px;background:rgba(9,132,227,0.1);border-radius:6px;font-size:0.78em;color:var(--text-sec);line-height:1.5;">
+              <strong>💡 深度优化建议：</strong><br>
+              ${!hasData ? '• 增加更多具体案例和数据支持：添加真实的案例和数据，增强内容的说服力和可信度。<br>' : ''}
+              ${depthScore < 60 ? '• 优化标题和开头，提高点击率：使用更有吸引力的标题，开头设置悬念或问题，吸引读者继续阅读。<br>' : ''}
+              • 增加互动元素，提高用户参与度：在内容中加入问题、投票或评论引导，鼓励用户互动。<br>
+              • 优化关键词分布，提升 SEO 效果：在标题、开头、正文和结尾合理分布关键词，提高搜索引擎排名。<br>
+              ${!hasStructure ? '• 保持内容结构清晰，易于阅读：使用小标题、分段、bullet points 等格式，提高内容的可读性。<br>' : ''}
+              ${sn.hits.length > 0 ? '• 检查并移除可能的敏感内容：避免使用政治敏感词汇，不涉及违法违规内容，保持内容积极健康。<br>' : ''}
+              ${mk.score > 40 ? '• 平衡营销内容与实用信息的比例：将营销内容控制在 30% 以内，增加更多有价值的实用信息。<br>' : ''}
+              ${hasClickbait || hasAbsolute ? '• 确保标题符合平台规范：避免使用夸大、误导性词汇，保持标题真实准确。<br>' : ''}
+              ${ai.score > 50 ? '• 增加情感表达和个人观点：减少机械感，增加人性化表达，让内容更具亲和力。<br>' : ''}
+              ${wordCount < 300 ? '• 优化内容长度和节奏：根据平台特性调整内容长度，保持合适的阅读节奏，避免冗长或过于简短。<br>' : ''}
+            </div>
+          `;
+        })()}
       </div>
     </div>`;
 
