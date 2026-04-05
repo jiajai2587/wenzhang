@@ -264,21 +264,44 @@ const STOP_WORDS = new Set(['的','了','在','是','我','有','和','就','不
 function analyzeAI(text) {
   const paras = splitParagraphs(text);
   const sents = splitSentences(text);
-  const perScore = Math.min(100, Math.max(0, (1 - new Set(text.replace(/\s/g,'').split('')).size/(text.length||1))*40 + 15));
-  const burScore = sents.length<3 ? 50 : Math.min(100, Math.sqrt(sents.reduce((a,s)=>a+Math.pow(s.length-sents.reduce((b,x)=>b+x.length,0)/sents.length,2))/sents.length)/(sents.reduce((a,s)=>a+s.length,0)/sents.length||1)*100);
-  const templateHits = paras.map(p => p.match(/首先|其次|最后|总而言之|综上所述|值得注意的是|不可否认|在当今社会|随着科技的|不得不提|与此同时|众所周知|显而易见|毋庸置疑|无疑是一个|成为了一个|扮演着重要的角色|带来了前所未有的|引起了广泛的关注|备受关注|日益凸显|应运而生|不可或缺|从某种程度上来说|毫无疑问/gi)||[]).flat();
+  const textLen = text.replace(/\s/g, '').length || 1;
+  const uniqueChars = new Set(text.replace(/\s/g, '').split('')).size;
+  const perScore = Math.min(100, Math.max(0, (1 - uniqueChars / textLen) * 40 + 15));
+  
+  let burScore = 50;
+  if (sents.length >= 3) {
+    const avgLen = sents.reduce((sum, s) => sum + s.length, 0) / sents.length;
+    if (avgLen > 0) {
+      const variance = sents.reduce((sum, s) => sum + Math.pow(s.length - avgLen, 2), 0) / sents.length;
+      burScore = Math.min(100, Math.sqrt(variance) / avgLen * 100);
+    }
+  }
+  
+  const templateHits = paras.map(p => p.match(/首先 | 其次 | 最后 | 总而言之 | 综上所述 | 值得注意的是 | 不可否认 | 在当今社会 | 随着科技的 | 不得不提 | 与此同时 | 众所周知 | 显而易见 | 毋庸置疑 | 无疑是一个 | 成为了一个 | 扮演着重要的角色 | 带来了前所未有的 | 引起了广泛的关注 | 备受关注 | 日益凸显 | 应运而生 | 不可或缺 | 从某种程度上来说 | 毫无疑问/gi)||[]).flat();
   
   const aiScore = Math.min(100, Math.max(0, Math.round(perScore*0.3 + (100-burScore)*0.2 + Math.min(35, templateHits.length*4.5))));
   const paraDetails = paras.map(p => {
     const ps = splitSentences(p);
-    const pc = (p.match(/首先|其次|最后|总而言之|综上所述|值得注意的是|不可否认|在当今社会|随着科技的|不得不提|与此同时|众所周知|显而易见|毋庸置疑|无疑是一个|成为了一个|扮演着重要的角色|带来了前所未有的|引起了广泛的关注|备受关注|日益凸显|应运而生|不可或缺|从某种程度上来说|毫无疑问/gi)||[]).length;
-    const pp = Math.min(100, (1 - new Set(p.replace(/\s/g,'').split('')).size/(p.length||1))*40 + 10);
-    const pb = ps.length<2 ? 50 : Math.min(100, Math.sqrt(ps.reduce((a,s)=>a+Math.pow(s.length-ps.reduce((b,x)=>b+x.length,0)/ps.length,2))/ps.length)/(ps.reduce((a,s)=>a+s.length,0)/ps.length||1)*100);
-    return { text:p, score: Math.min(100, Math.max(0, Math.round(pp*0.3+(100-pb)*0.2+pc*8))), per: Math.round(pp), bur: Math.round(pb), aiCount: pc };
+    const pc = (p.match(/首先 | 其次 | 最后 | 总而言之 | 综上所述 | 值得注意的是 | 不可否认 | 在当今社会 | 随着科技的 | 不得不提 | 与此同时 | 众所周知 | 显而易见 | 毋庸置疑 | 无疑是一个 | 成为了一个 | 扮演着重要的角色 | 带来了前所未有的 | 引起了广泛的关注 | 备受关注 | 日益凸显 | 应运而生 | 不可或缺 | 从某种程度上来说 | 毫无疑问/gi)||[]).length;
+    const pLen = p.replace(/\s/g, '').length || 1;
+    const pp = Math.min(100, (1 - new Set(p.replace(/\s/g, '').split('')).size / pLen) * 40 + 10);
+    
+    let pb = 50;
+    if (ps.length >= 2) {
+      const pAvgLen = ps.reduce((sum, s) => sum + s.length, 0) / ps.length;
+      if (pAvgLen > 0) {
+        const pVariance = ps.reduce((sum, s) => sum + Math.pow(s.length - pAvgLen, 2), 0) / ps.length;
+        pb = Math.min(100, Math.sqrt(pVariance) / pAvgLen * 100);
+      }
+    }
+    
+    const pScore = Math.min(100, Math.max(0, Math.round(pp*0.3 + (100-pb)*0.2 + pc*8)));
+    return { text: p, score: pScore, per: Math.round(pp), bur: Math.round(pb), aiCount: pc };
   });
 
   return { score: aiScore, per: Math.round(perScore), bur: Math.round(burScore), templates: [...new Set(templateHits)], paraDetails };
 }
+
 
 function analyzeTraffic(text) {
   const sents = splitSentences(text);
@@ -410,10 +433,20 @@ function renderAll() {
         ${ai.paraDetails.map((p,i)=>{
           const c=p.score>60?'var(--danger)':p.score>30?'var(--warning)':'var(--success)';
           const tag=p.score>60?'tag-ai':p.score>30?'tag-mixed':'tag-human';
-          return `<div class="para-item ${p.score>60?'ai-high':p.score>30?'ai-mid':'ai-low'}" style="margin-bottom:4px;">
-            <div class="para-header"><strong>P${i+1}</strong><span class="para-tag ${tag}">${p.score}%</span></div>
-            <div class="progress-bar"><div class="progress-fill" style="width:${p.score}%;background:${c}"></div></div>
-            <div class="para-scores"><span>困惑:${p.per}</span><span>突发:${p.bur}</span><span>模板:${p.aiCount}</span></div></div>`;
+          const shortText = p.text.length > 50 ? p.text.substring(0, 50) + '...' : p.text;
+          return `<div class="para-item ${p.score>60?'ai-high':p.score>30?'ai-mid':'ai-low'}" style="margin-bottom:6px;padding:10px;">
+            <div class="para-header">
+              <strong style="color:var(--text)">段落 ${i+1}</strong>
+              <span class="para-tag ${tag}" style="font-size:0.75em;padding:2px 8px;">AI 概率：${p.score}%</span>
+            </div>
+            <div class="progress-bar" style="margin:6px 0;"><div class="progress-fill" style="width:${p.score}%;background:${c}"></div></div>
+            <div class="para-text" style="margin:6px 0;padding:6px;background:rgba(0,0,0,0.1);border-radius:4px;font-size:0.82em;line-height:1.5;">${escapeHtml(shortText)}</div>
+            <div class="para-scores" style="display:flex;gap:12px;justify-content:space-around;margin-top:8px;padding-top:6px;border-top:1px solid var(--border);">
+              <span title="困惑度越高越像 AI">📊 困惑度：<strong style="color:var(--accent-light)">${p.per}</strong></span>
+              <span title="突发性越低越像 AI">⚡ 突发性：<strong style="color:var(--success)">${p.bur}</strong></span>
+              <span title="AI 模板词命中数">🏷️ 模板词：<strong style="color:var(--warning)">${p.aiCount}</strong></span>
+            </div>
+          </div>`;
         }).join('')}
       </div>
     </div>`;
