@@ -528,6 +528,65 @@ function renderAll() {
   const lg = analyzeLogic(text);
   const sn = analyzeSensitive(text);
   const mk = analyzeMarketing(text);
+  
+  // 计算限流风险
+  const sensCount = sn.hits.length;
+  const marketScore = mk.score;
+  const riskScore = Math.min(100, sensCount * 15 + marketScore * 0.3);
+  const riskLevel = riskScore > 60 ? '高危' : riskScore > 30 ? '中危' : '安全';
+  const riskColor = riskScore > 60 ? 'var(--danger)' : riskScore > 30 ? 'var(--warning)' : 'var(--success)';
+  
+  // 口水文检测（重复词比例）
+  const words = text.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').split('');
+  const uniqueWords = [...new Set(words)];
+  const repeatRatio = words.length > 0 ? (1 - uniqueWords.length / words.length) : 0;
+  const isWatermark = repeatRatio > 0.4;
+  
+  // 标题合规检测
+  const firstLine = text.split('\n')[0] || '';
+  const clickbaitWords = ['震惊', '揭秘', '必看', '重磅', '首发', '独家', '内幕', '曝光', '疯了', '吓死', '惊呆了', '最后一天', '限时', '秒杀', '不转不是'];
+  const foundClickbait = clickbaitWords.filter(w => firstLine.includes(w));
+  const titleLen = firstLine.length;
+  let titleScore = 100;
+  if(foundClickbait.length > 0) titleScore -= foundClickbait.length * 20;
+  if(titleLen < 10) titleScore -= 20;
+  if(titleLen > 30) titleScore -= 10;
+  titleScore = Math.max(0, titleScore);
+  const clickbaitLevel = foundClickbait.length > 2 ? '高' : foundClickbait.length > 0 ? '中' : '低';
+  
+  // 内容深度状态
+  const paraCount = text.split(/\n\s*\n/).filter(p => p.trim().length > 0).length;
+  const avgParaLen = text.length / (paraCount || 1);
+  const hasNumbers = /\d/.test(text);
+  const hasQuestions = /[？?]/.test(text);
+  const hasLists = /[•●○■□▪▫→⇒✓✔✗✘]/.test(text);
+  const infoDensity = avgParaLen > 150 ? '低' : avgParaLen > 80 ? '中' : '高';
+  const logicStruct = paraCount >= 3 && hasLists ? '清晰' : paraCount >= 2 ? '较清晰' : '待优化';
+  const originality = hasNumbers && hasQuestions ? '强' : hasNumbers || hasQuestions ? '中等' : '一般';
+  const depthLevel = (paraCount >= 4 && hasNumbers && hasLists) ? '优秀，内容丰富且深度足够' : (paraCount >= 2 && hasNumbers) ? '良好，有一定信息量' : '一般，建议增加案例和数据';
+  
+  // 智能优化建议
+  const suggestions = [];
+  if(ai.score > 50) suggestions.push({icon: 'warn', text: 'AI 痕迹较明显，建议增加个人化表达和具体案例'});
+  if(tr.hook < 60) suggestions.push({icon: 'warn', text: '开头吸引力不足，前 30 字需植入痛点或悬念'});
+  if(sn.score > 10) suggestions.push({icon: 'bad', text: '检测到敏感词，需立即替换避免限流'});
+  if(mk.score > 40) suggestions.push({icon: 'warn', text: '营销浓度偏高，建议软性植入产品'});
+  if(paraCount < 3) suggestions.push({icon: 'warn', text: '段落过少，建议拆分成长短交错的片段'});
+  if(!hasNumbers) suggestions.push({icon: 'warn', text: '缺少数据支撑，添加具体数字提升可信度'});
+  if(suggestions.length === 0) suggestions.push({icon: 'good', text: '内容质量优秀，保持当前风格即可'});
+  
+  const riskAdvice = [
+    '增加更多具体案例和数据支持：添加真实的案例和数据，增强内容的说服力和可信度。',
+    '优化标题和开头，提高点击率：使用更有吸引力的标题，开头设置悬念或问题，吸引读者继续阅读。',
+    '增加互动元素，提高用户参与度：在内容中加入问题、投票或评论引导，鼓励用户互动。',
+    '优化关键词分布，提升 SEO 效果：在标题、开头、正文和结尾合理分布关键词，提高搜索引擎排名。',
+    '保持内容结构清晰，易于阅读：使用小标题、分段、bullet points 等格式，提高内容的可读性。',
+    '检查并移除可能的敏感内容：避免使用政治敏感词汇，不涉及违法违规内容，保持内容积极健康。',
+    '平衡营销内容与实用信息的比例：将营销内容控制在 30% 以内，增加更多有价值的实用信息。',
+    '确保标题符合平台规范：避免使用夸大、误导性词汇，保持标题真实准确。',
+    '增加情感表达和个人观点：减少机械感，增加人性化表达，让内容更具亲和力。',
+    '优化内容长度和节奏：根据平台特性调整内容长度，保持合适的阅读节奏，避免冗长或过于简短。'
+  ];
 
   // AI Tab
   document.getElementById('tab-ai').innerHTML = `
