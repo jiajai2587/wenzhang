@@ -1,543 +1,808 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 文章检测与优化助手 - 专业版</title>
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --bg: #f3f4f6;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --text-light: #6b7280;
-            --border: #e5e7eb;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+<title>自媒体内容检测工具 Pro Max</title>
+<style>
+  :root {
+    --bg: #0f1117; --bg-sec: #1a1d2e; --bg-card: #222640; --bg-input: #161929;
+    --text: #e8e8f0; --text-sec: #8a8aa0; --border: #2d3154;
+    --accent: #6c5ce7; --accent-light: #a29bfe; --accent-glow: rgba(108, 92, 231, 0.3);
+    --success: #00b894; --warning: #fdcb6e; --danger: #e17055; --info: #0984e3;
+    --radius: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  [data-theme="light"] {
+    --bg: #f8f9fc; --bg-sec: #ffffff; --bg-card: #ffffff; --bg-input: #f0f4f8;
+    --text: #1f2937; --text-sec: #6b7280; --border: #e5e7eb;
+    --accent: #5b3cc4; --accent-light: #6d56d8; --accent-glow: rgba(108, 92, 231, 0.15);
+    --success: #059669; --warning: #d97706; --danger: #dc2626; --info: #2563eb;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; transition: background 0.3s, color 0.3s, border-color 0.3s; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .container { max-width: 1300px; margin: 0 auto; padding: 18px; }
+  
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+  .header h1 { font-size: 1.8em; background: linear-gradient(135deg, var(--accent-light), var(--accent), #fd79a8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-controls { display: flex; gap: 8px; }
+  .btn-icon { background: var(--bg-card); border: 1px solid var(--border); color: var(--text); width: 38px; height: 38px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; }
+  .btn-icon:hover { border-color: var(--accent); color: var(--accent-light); }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
-        
-        body { background: var(--bg); color: var(--text); line-height: 1.6; padding: 20px; }
-        
-        .container { max-width: 1400px; margin: 0 auto; }
-        
-        header { text-align: center; margin-bottom: 30px; }
-        header h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 10px; }
-        header p { color: var(--text-light); font-size: 1.1rem; }
+  /* Manual */
+  .manual-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 15px; display: none; box-shadow: var(--shadow); }
+  .manual-panel.show { display: block; animation: slideDown 0.4s ease; }
+  .manual-title { font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: var(--accent-light); }
+  .manual-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+  .manual-step { background: var(--bg-input); border-radius: 8px; padding: 12px; border-left: 3px solid var(--accent); }
+  .manual-step h4 { color: var(--accent-light); margin-bottom: 6px; font-size: 0.95em; }
+  .manual-step p { color: var(--text-sec); font-size: 0.85em; line-height: 1.5; }
+  .manual-step ul { margin: 6px 0 0 18px; font-size: 0.82em; color: var(--text-sec); line-height: 1.6; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .main-grid { display: grid; grid-template-columns: 1fr; gap: 25px; }
-        
-        /* 输入区域 */
-        .input-section { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        textarea { width: 100%; height: 200px; padding: 15px; border: 2px solid var(--border); border-radius: 8px; font-size: 16px; resize: vertical; transition: border-color 0.3s; }
-        textarea:focus { outline: none; border-color: var(--primary); }
-        
-        .btn-group { display: flex; gap: 15px; margin-top: 20px; }
-        button { padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 16px; display: flex; align-items: center; gap: 8px; }
-        .btn-primary { background: var(--primary); color: white; flex: 2; justify-content: center; }
-        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); }
-        .btn-secondary { background: white; color: var(--text); border: 2px solid var(--border); flex: 1; justify-content: center; }
-        .btn-secondary:hover { background: #f9fafb; border-color: var(--text-light); }
-        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 15px; background: var(--bg-sec); padding: 6px; border-radius: var(--radius); overflow-x: auto; flex-wrap: wrap; }
+  .tab { padding: 9px 16px; border: none; background: transparent; color: var(--text-sec); cursor: pointer; border-radius: 8px; font-size: 0.85em; white-space: nowrap; }
+  .tab:hover { color: var(--text); background: rgba(108, 92, 231, 0.1); }
+  .tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px var(--accent-glow); }
 
-        /* 结果区域通用样式 */
-        .result-section { display: none; animation: fadeIn 0.5s ease; }
-        .result-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .main-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+  @media (max-width: 900px) { .main-layout { grid-template-columns: 1fr; } }
+  
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+  .card-title { font-size: 1em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .card-title .icon { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; background: rgba(108,92,231,0.15); }
 
-        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        
-        .card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid var(--border); }
-        .card h3 { font-size: 1.25rem; margin-bottom: 15px; color: var(--text); display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
-        
-        /* 特征词标签 */
-        .tags-container { display: flex; flex-wrap: wrap; gap: 10px; }
-        .tag { padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: 500; background: #e0e7ff; color: var(--primary); }
-        .tag.danger { background: #fee2e2; color: var(--danger); }
-        .tag.warning { background: #fef3c7; color: var(--warning); }
-        .tag.success { background: #d1fae5; color: var(--success); }
+  .input-area { width: 100%; min-height: 240px; background: var(--bg-input); border: 2px solid var(--border); border-radius: var(--radius); padding: 12px; color: var(--text); font-size: 0.92em; line-height: 1.8; resize: vertical; outline: none; }
+  .input-area:focus { border-color: var(--accent); }
+  .char-count { text-align: right; color: var(--text-sec); font-size: 0.8em; margin-top: 5px; }
 
-        /* 逐段热力图 - 全屏网格 */
-        .heat-map-container { 
-            grid-column: 1 / -1; 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-            gap: 20px; 
-        }
-        .segment-card { 
-            background: var(--card-bg); 
-            padding: 15px; 
-            border-radius: 10px; 
-            border-left: 5px solid var(--primary); 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-        }
-        .segment-card:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .segment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .segment-title { font-weight: bold; color: var(--text-light); font-size: 0.9rem; }
-        .ai-score { font-weight: bold; font-size: 1.1rem; }
-        .ai-score.high { color: var(--danger); }
-        .ai-score.medium { color: var(--warning); }
-        .ai-score.low { color: var(--success); }
-        .segment-text { font-size: 0.9rem; color: var(--text); background: #f9fafb; padding: 10px; border-radius: 6px; margin-bottom: 10px; max-height: 80px; overflow: hidden; position: relative; }
-        .segment-text::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 30px; background: linear-gradient(transparent, #f9fafb); }
-        .progress-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .btn-group { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .btn { padding: 9px 18px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.88em; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), #8b7cf7); color: #fff; box-shadow: 0 4px 12px var(--accent-glow); }
+  .btn-secondary { background: var(--bg-input); color: var(--text); border: 1px solid var(--border); }
+  .btn-danger { background: linear-gradient(135deg, var(--danger), #d63031); color: #fff; }
 
-        /* 仪表盘数据 */
-        .stat-value { font-size: 2rem; font-weight: bold; color: var(--primary); margin: 10px 0; }
-        .stat-label { color: var(--text-light); font-size: 0.9rem; }
-        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; margin-top: 5px; }
-        .status-safe { background: #d1fae5; color: var(--success); }
-        .status-risk { background: #fef3c7; color: var(--warning); }
-        .status-danger { background: #fee2e2; color: var(--danger); }
+  .results-panel { display: flex; flex-direction: column; gap: 10px; max-height: 520px; overflow-y: auto; padding-right: 4px; }
+  .results-panel::-webkit-scrollbar { width: 4px; }
+  .results-panel::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
 
-        /* 优化建议列表 */
-        .suggestion-list { list-style: none; }
-        .suggestion-item { padding: 12px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: start; }
-        .suggestion-item:last-child { border-bottom: none; }
-        .suggestion-icon { color: var(--success); font-weight: bold; flex-shrink: 0; }
-        .suggestion-text { font-size: 0.95rem; color: var(--text); }
+  .score-circle { width: 100px; height: 100px; margin: 6px auto; position: relative; }
+  .score-circle svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+  .score-circle .bg { fill: none; stroke: var(--border); stroke-width: 7; }
+  .score-circle .progress { fill: none; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+  .score-value { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+  .score-value .num { font-size: 1.5em; font-weight: 700; }
+  .score-value .label { font-size: 0.65em; color: var(--text-sec); }
 
-        /* 平台推荐 */
-        .platform-card { text-align: center; padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: #f9fafb; }
-        .platform-score { font-size: 2.5rem; font-weight: bold; color: var(--primary); margin: 10px 0; }
-        .platform-reason { font-size: 0.85rem; color: var(--text-light); margin-top: 10px; line-height: 1.4; }
-        .check-list { text-align: left; margin-top: 10px; font-size: 0.85rem; }
-        .check-item { margin: 4px 0; display: flex; align-items: center; gap: 5px; }
-        .check-ok { color: var(--success); }
-        .check-no { color: var(--text-light); opacity: 0.5; }
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .metric-item { background: var(--bg-input); border-radius: 8px; padding: 8px; text-align: center; border: 1px solid var(--border); }
+  .metric-value { font-size: 1.1em; font-weight: 700; margin-bottom: 1px; }
+  .metric-label { font-size: 0.7em; color: var(--text-sec); }
 
-        footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-light); font-size: 0.9rem; }
-        .contact-info { display: flex; justify-content: center; gap: 20px; margin-top: 10px; flex-wrap: wrap; }
-        .contact-item { display: flex; align-items: center; gap: 5px; }
+  .progress-bar { width: 100%; height: 6px; background: var(--bg-input); border-radius: 3px; overflow: hidden; margin: 4px 0; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
 
-        /* 加载动画 */
-        .loading { display: none; text-align: center; padding: 20px; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .para-item { background: var(--bg-input); border-radius: 8px; padding: 8px; margin-bottom: 6px; border-left: 3px solid var(--accent); }
+  .para-item.ai-high { border-left-color: var(--danger); }
+  .para-item.ai-mid { border-left-color: var(--warning); }
+  .para-item.ai-low { border-left-color: var(--success); }
+  .para-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+  .para-tag { font-size: 0.7em; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+  .tag-human { background: rgba(0,184,148,0.2); color: var(--success); }
+  .tag-ai { background: rgba(225,112,85,0.2); color: var(--danger); }
+  .tag-mixed { background: rgba(253,203,110,0.2); color: var(--warning); }
+  .para-text { font-size: 0.8em; color: var(--text-sec); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .para-scores { display: flex; gap: 8px; margin-top: 4px; font-size: 0.72em; }
+  .para-score-item { color: var(--text-sec); }
+  .para-score-item span { color: var(--text); font-weight: 600; }
 
-        @media (max-width: 768px) {
-            .btn-group { flex-direction: column; }
-            .heat-map-container { grid-template-columns: 1fr; }
-        }
-    </style>
+  .detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 8px; }
+  .detail-card { background: var(--bg-input); border-radius: 8px; padding: 10px; border: 1px solid var(--border); }
+  .detail-card h4 { font-size: 0.82em; color: var(--accent-light); margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+  .detail-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; font-size: 0.8em; }
+  .detail-row span:first-child { color: var(--text-sec); }
+  .detail-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-top: 2px; }
+  [data-theme="light"] .detail-bar { background: rgba(0,0,0,0.08); }
+  .detail-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+
+  .trigger-item { background: var(--bg-input); border-radius: 6px; padding: 6px 8px; margin: 4px 0; border: 1px dashed var(--warning); font-size: 0.8em; }
+  .trigger-loc { color: var(--warning); font-weight: 600; margin-bottom: 2px; }
+  .trigger-context { color: var(--text-sec); font-family: monospace; padding: 2px 0; }
+  .trigger-word { background: rgba(225,112,85,0.2); color: var(--danger); padding: 1px 3px; border-radius: 3px; font-weight: 600; }
+
+  .explain-box { background: rgba(9, 132, 227, 0.08); border: 1px solid rgba(9, 132, 227, 0.3); border-radius: 6px; padding: 10px; margin-top: 8px; font-size: 0.78em; line-height: 1.5; color: var(--text-sec); }
+  .explain-box strong { color: var(--info); }
+
+  .report-table { width: 100%; border-collapse: collapse; font-size: 0.83em; }
+  .report-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
+  .report-table td:first-child { color: var(--text-sec); width: 35%; }
+  .report-table td:last-child { font-weight: 600; }
+
+  .suggestion-item { padding: 7px 8px; background: var(--bg-input); border-radius: 6px; margin-bottom: 5px; display: flex; gap: 8px; align-items: flex-start; font-size: 0.83em; border: 1px solid var(--border); }
+  .suggestion-icon { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; margin-top: 2px; }
+  .suggestion-icon.good { background: rgba(0,184,148,0.2); color: var(--success); }
+  .suggestion-icon.warn { background: rgba(253,203,110,0.2); color: var(--warning); }
+  .suggestion-icon.bad { background: rgba(225,112,85,0.2); color: var(--danger); }
+  .suggestion-text { line-height: 1.5; color: var(--text-sec); }
+  .suggestion-text strong { color: var(--text); }
+
+  .loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 17, 23, 0.85); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; gap: 12px; }
+  [data-theme="light"] .loading-overlay { background: rgba(248,249,252,0.9); }
+  .loading-overlay.show { display: flex; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--text-sec); font-size: 0.88em; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .risk-high { color: var(--danger); } .risk-mid { color: var(--warning); } .risk-low { color: var(--success); }
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🤖 AI 文章检测与优化助手</h1>
-            <p>深度解析 AI 生成概率 · 限流风险预警 · 智能优化建议</p>
-        </header>
 
-        <div class="main-grid">
-            <!-- 输入区 -->
-            <section class="input-section">
-                <textarea id="articleInput" placeholder="请在此粘贴您的文章内容（建议 200 字以上以获得更准确分析）..."></textarea>
-                <div class="btn-group">
-                    <button id="analyzeBtn" class="btn-primary">⚡ 一键全检</button>
-                    <button id="clearBtn" class="btn-secondary">🗑️ 清空重置</button>
-                </div>
-                <div id="loading" class="loading">
-                    <div class="spinner"></div>
-                    <p>正在深度分析文章结构与内容...</p>
-                </div>
-            </section>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">正在多维度解析内容...</div>
+</div>
 
-            <!-- 结果区 -->
-            <div id="results" class="result-section">
-                
-                <!-- 第一行：特征词 + 概览 -->
-                <div class="grid-2" style="margin-bottom: 20px;">
-                    <div class="card" style="grid-column: 1 / -1;">
-                        <h3>🔍 AI 特征词清单</h3>
-                        <div id="featureTags" class="tags-container"></div>
-                    </div>
-                </div>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>🔍 自媒体内容检测工具 Pro Max</h1>
+      <div style="font-size:0.85em; color:var(--text-sec); margin-top:2px;">AI检测 · 流量预测 · 逻辑诊断 · 合规审查 · 营销识别</div>
+      <div style="font-size:0.75em; color:var(--text-sec); margin-top:4px;">📧 联系我们：2742938881@qq.com | 微信：xiaoqi19860607</div>
+    </div>
+    <div class="header-controls">
+      <button class="btn-icon" id="themeToggle" title="切换主题">🌙</button>
+      <button class="btn-icon" id="manualToggle" title="使用说明">📖</button>
+    </div>
+  </div>
 
-                <!-- 第二行：逐段热力图 (全屏) -->
-                <div class="card" style="margin-bottom: 20px;">
-                    <h3>📊 逐段 AI 热力检测</h3>
-                    <div id="heatMap" class="heat-map-container"></div>
-                </div>
+  <!-- 使用说明 -->
+  <div class="manual-panel" id="manualPanel">
+    <div class="manual-title">📘 详细使用说明书</div>
+    <div class="manual-grid">
+      <div class="manual-step">
+        <h4>Step 1：准备内容</h4>
+        <p>将待检测的文章/文案粘贴至输入框。支持多段落、长文本（建议 200 字以上，结果更精准）。</p>
+        <ul>
+          <li>💡 支持分段检测，自动识别换行符</li>
+          <li>📌 点击底部按钮可加载优质/AI/营销示例对比学习</li>
+        </ul>
+      </div>
+      <div class="manual-step">
+        <h4>Step 2：一键全检</h4>
+        <p>点击 <strong>🚀 一键全检</strong>，系统将同步执行 5 大算法引擎：</p>
+        <ul>
+          <li>🤖 困惑度+突发性+模板匹配 → AI 概率</li>
+          <li>📈 钩子力+可读性+情绪+结构 → 流量潜力</li>
+          <li>🧠 词重叠+连接词+首尾呼应 → 逻辑连贯</li>
+          <li>🛡️ 三级词库扫描 → 敏感违规预警</li>
+          <li>🛒 正则特征提取 → 营销浓度判定</li>
+        </ul>
+      </div>
+      <div class="manual-step">
+        <h4>Step 3：解读报告</h4>
+        <p>点击上方 6 个标签页查看详细维度。每个指标旁均有 <strong>📘 白话解读</strong>，说明该分数代表什么、如何优化。</p>
+        <ul>
+          <li>🔴 >70%：高风险/需重点修改</li>
+          <li>🟡 40%-70%：中等/建议微调</li>
+          <li>🟢 <40%：健康/可保持</li>
+        </ul>
+      </div>
+      <div class="manual-step">
+        <h4>Step 4：导出与优化</h4>
+        <p>在「综合报告」页查看动态生成的逐段优化清单。支持导出 <strong>TXT</strong> 或 <strong>JSON</strong>，或一键复制摘要到剪贴板，方便存档或二次排版。</p>
+      </div>
+    </div>
+  </div>
 
-                <!-- 第三行：深度检测三件套 -->
-                <div class="grid-3" style="margin-bottom: 20px;">
-                    <!-- 限流检测 -->
-                    <div class="card">
-                        <h3>🛡️ 限流风险检测</h3>
-                        <div class="stat-value" id="limitScore">0%</div>
-                        <div class="stat-label">限流指数</div>
-                        <div id="limitStatus" class="status-badge status-safe">安全</div>
-                        <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
-                            <p style="font-size: 0.9rem; margin-bottom: 5px;"><strong>口水文检测:</strong> <span id="watermarkCheck">否</span></p>
-                            <p style="font-size: 0.9rem;"><strong>敏感词数:</strong> <span id="sensitiveCount">0</span></p>
-                        </div>
-                    </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="ai">🤖 AI检测</button>
+    <button class="tab" data-tab="traffic">📈 流量预测</button>
+    <button class="tab" data-tab="logic">🧠 逻辑性</button>
+    <button class="tab" data-tab="sensitive">🛡️ 敏感违规</button>
+    <button class="tab" data-tab="marketing">🛒 营销文</button>
+    <button class="tab" data-tab="report">📋 综合报告</button>
+  </div>
 
-                    <!-- 标题合规 -->
-                    <div class="card">
-                        <h3>📝 标题合规检测</h3>
-                        <div class="stat-value" id="titleScore">0</div>
-                        <div class="stat-label">合规评分</div>
-                        <div id="titleStatus" class="status-badge status-safe">合规</div>
-                        <div style="margin-top: 15px; font-size: 0.9rem; color: var(--text-light);">
-                            <p>标题党指数：<span id="clickbaitLevel">低</span></p>
-                            <p>违禁词：<span id="titleBanWords">无</span></p>
-                        </div>
-                    </div>
-
-                    <!-- 内容深度 -->
-                    <div class="card">
-                        <h3>💡 AI 内容深度状态</h3>
-                        <div class="stat-value" id="depthLevel" style="color: var(--success);">优秀</div>
-                        <div class="stat-label">质量评级</div>
-                        <p style="font-size: 0.9rem; margin-top: 10px; color: var(--text-light);" id="depthDesc">内容丰富且深度足够</p>
-                        <div style="margin-top: 10px; font-size: 0.85rem;">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>信息密度</span><span id="infoDensity">高</span></div>
-                            <div style="display:flex; justify-content:space-between;"><span>逻辑结构</span><span id="logicStruct">清晰</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 第四行：优化建议 -->
-                <div class="card" style="margin-bottom: 20px;">
-                    <h3>🚀 智能优化建议</h3>
-                    <ul id="suggestionsList" class="suggestion-list"></ul>
-                </div>
-
-                <!-- 第五行：平台推荐 -->
-                <div class="card">
-                    <h3>🎯 推荐发布平台</h3>
-                    <div id="platformGrid" class="grid-3"></div>
-                </div>
-            </div>
-        </div>
-
-        <footer>
-            <p>© 2024 AI 文章检测助手 | 专业版</p>
-            <div class="contact-info">
-                <div class="contact-item">📧 邮箱：2742938881@qq.com</div>
-                <div class="contact-item">💬 微信：xiaoqi19860607</div>
-            </div>
-        </footer>
+  <div class="main-layout">
+    <div class="card">
+      <div class="card-title"><div class="icon">📝</div> 内容输入</div>
+      <textarea class="input-area" id="textInput" placeholder="请在此粘贴需要检测的文章、文案或脚本...&#10;&#10;系统将自动进行分词、分句、分段分析。&#10;建议字数 > 200 字以获得精准模型输出。"></textarea>
+      <div class="char-count">字数: <span id="charCount">0</span> | 段落: <span id="paraCount">0</span> | 句子: <span id="sentenceCount">0</span></div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="runAllDetection()">🚀 一键全检</button>
+        <button class="btn btn-secondary" onclick="loadSample()">📄 优质示例</button>
+        <button class="btn btn-secondary" onclick="loadAiSample()">🤖 AI示例</button>
+        <button class="btn btn-secondary" onclick="loadMarketingSample()">📢 营销示例</button>
+        <button class="btn btn-danger" onclick="clearAll()">🗑️ 清空</button>
+      </div>
     </div>
 
-    <script>
-        // 配置常量
-        const AI_KEYWORDS = ['首先', '其次', '总之', '综上所述', '值得注意的是', '此外', '然而', '因此', '一方面', '另一方面', '总的来说', '在这个', '随着', '不仅', '而且', '我们', '大家', '让我们', '重要的是'];
-        const SENSITIVE_WORDS = ['最', '第一', '绝对', '完美', '赚钱', '暴富', '政治', '色情', '赌博', '迷信', '暴力'];
-        const CLICKBAIT_WORDS = ['震惊', '揭秘', '内幕', '必看', '删前', '曝光', '惊天', '吓尿', '疯狂', '秘密'];
-        const WATERMARK_PATTERNS = [/哈哈/g, /呵呵/g, /啊啊/g, /。。/g, /\s{3,}/g];
+    <div class="card">
+      <div class="card-title"><div class="icon">📊</div> 检测速览</div>
+      <div class="results-panel" id="resultsPanel">
+        <div style="text-align:center; padding:30px 10px; color:var(--text-sec);">
+          <div style="font-size:2.5em; margin-bottom:10px;">📤</div>
+          <p>请在左侧输入内容后点击“一键全检”</p>
+          <p style="font-size:0.8em; margin-top:5px;">系统将自动输出6大维度深度报告</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        // DOM 元素
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const articleInput = document.getElementById('articleInput');
-        const loading = document.getElementById('loading');
-        const results = document.getElementById('results');
+  <div id="fullResults" style="margin-top:15px; display:none;">
+    <div class="tab-content active" id="tab-ai"></div>
+    <div class="tab-content" id="tab-traffic"></div>
+    <div class="tab-content" id="tab-logic"></div>
+    <div class="tab-content" id="tab-sensitive"></div>
+    <div class="tab-content" id="tab-marketing"></div>
+    <div class="tab-content" id="tab-report"></div>
+  </div>
+</div>
 
-        // 事件监听
-        analyzeBtn.addEventListener('click', runAnalysis);
-        clearBtn.addEventListener('click', resetApp);
+<script>
+// ==================== 安全工具 ====================
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
 
-        function resetApp() {
-            articleInput.value = '';
-            results.classList.remove('active');
-            analyzeBtn.disabled = false;
-            analyzeBtn.textContent = '⚡ 一键全检';
-        }
+// ==================== 核心工具 ====================
+const splitParagraphs = t => t.split(/\n\s*\n|\n/).filter(p => p.trim().length > 0).map(p => p.trim());
+const splitSentences = t => t.split(/[。！？.!?;；\n]+/).filter(s => s.trim().length > 0).map(s => s.trim());
+const countMatch = (t, r) => (t.match(r)||[]).length;
 
-        async function runAnalysis() {
-            const text = articleInput.value.trim();
-            if (!text) {
-                alert('请输入文章内容！');
-                return;
-            }
+const STOP_WORDS = new Set(['的','了','在','是','我','有','和','就','不','人','都','一','一个','上','也','很','到','说','要','去','你','会','着','没有','看','好','自己','这','他','她','它','们','那','里','什么','这个','那个','因为','所以','但是','而且','如果','虽然','然而','然后','于是','接着','最后','首先','其次','再次','总之','其实','确实','真的','非常','特别','十分','相当','比较','更加','越来越','已经','曾经','正在','将要','即将','目前','现在','今天','明天','昨天','今年','去年','通过','为了','随着','关于','从','对','于','以','及','而','且','或','要么','不仅','而且','既','又','虽然','但是','尽管','仍然','不过','只是','仅仅','大约','大概','可能','也许','或许','似乎','仿佛','犹如','好像','如同','如同','一样','似的','般','般','般','般']);
 
-            // UI 状态更新
-            analyzeBtn.disabled = true;
-            analyzeBtn.textContent = '分析中...';
-            loading.style.display = 'block';
-            results.classList.remove('active');
+// ==================== 分析引擎 ====================
+function analyzeAI(text) {
+  if (!text || text.trim().length === 0) {
+    return { score: 0, per: 0, bur: 0, templates: [], paraDetails: [] };
+  }
+  
+  const paras = splitParagraphs(text);
+  const sents = splitSentences(text);
+  
+  if (paras.length === 0 || sents.length === 0) {
+    return { score: 0, per: 0, bur: 0, templates: [], paraDetails: [] };
+  }
+  
+  const textLen = text.replace(/\s/g, '').length;
+  const safeTextLen = textLen > 0 ? textLen : 1;
+  const uniqueChars = new Set(text.replace(/\s/g, '').split('')).size;
+  
+  // 困惑度计算 (Perplexity)
+  let perScore = 0;
+  if (safeTextLen > 0 && uniqueChars > 0) {
+    const ratio = uniqueChars / safeTextLen;
+    perScore = Math.min(100, Math.max(0, (1 - ratio) * 40 + 15));
+  } else {
+    perScore = 15;
+  }
+  
+  // 突发性计算 (Burstiness)
+  let burScore = 50;
+  if (sents.length >= 2) {
+    const avgLen = sents.reduce((sum, s) => sum + s.length, 0) / sents.length;
+    if (avgLen > 0) {
+      const variance = sents.reduce((sum, s) => sum + Math.pow(s.length - avgLen, 2), 0) / sents.length;
+      const stdDev = Math.sqrt(variance);
+      burScore = Math.min(100, Math.max(0, (stdDev / avgLen) * 100));
+    }
+  }
+  
+  const templateHits = paras.map(p => p.match(/首先 | 其次 | 最后 | 总而言之 | 综上所述 | 值得注意的是 | 不可否认 | 在当今社会 | 随着科技的 | 不得不提 | 与此同时 | 众所周知 | 显而易见 | 毋庸置疑 | 无疑是一个 | 成为了一个 | 扮演着重要的角色 | 带来了前所未有的 | 引起了广泛的关注 | 备受关注 | 日益凸显 | 应运而生 | 不可或缺 | 从某种程度上来说 | 毫无疑问/gi)||[]).flat();
+  
+  const aiScore = Math.min(100, Math.max(0, Math.round(perScore * 0.3 + (100 - burScore) * 0.2 + Math.min(35, templateHits.length * 4.5))));
+  
+  const paraDetails = paras.map(p => {
+    const ps = splitSentences(p);
+    const pc = (p.match(/首先 | 其次 | 最后 | 总而言之 | 综上所述 | 值得注意的是 | 不可否认 | 在当今社会 | 随着科技的 | 不得不提 | 与此同时 | 众所周知 | 显而易见 | 毋庸置疑 | 无疑是一个 | 成为了一个 | 扮演着重要的角色 | 带来了前所未有的 | 引起了广泛的关注 | 备受关注 | 日益凸显 | 应运而生 | 不可或缺 | 从某种程度上来说 | 毫无疑问/gi)||[]).length;
+    
+    const pLen = p.replace(/\s/g, '').length;
+    const safePLen = pLen > 0 ? pLen : 1;
+    const pUnique = new Set(p.replace(/\s/g, '').split('')).size;
+    
+    let pp = 10;
+    if (safePLen > 0 && pUnique > 0) {
+      const pRatio = pUnique / safePLen;
+      pp = Math.min(100, Math.max(0, (1 - pRatio) * 40 + 10));
+    }
+    
+    let pb = 50;
+    if (ps.length >= 2) {
+      const pAvgLen = ps.reduce((sum, s) => sum + s.length, 0) / ps.length;
+      if (pAvgLen > 0) {
+        const pVariance = ps.reduce((sum, s) => sum + Math.pow(s.length - pAvgLen, 2), 0) / ps.length;
+        const pStdDev = Math.sqrt(pVariance);
+        pb = Math.min(100, Math.max(0, (pStdDev / pAvgLen) * 100));
+      }
+    }
+    
+    const pScore = Math.min(100, Math.max(0, Math.round(pp * 0.3 + (100 - pb) * 0.2 + pc * 8)));
+    return { text: p, score: pScore, per: Math.round(pp), bur: Math.round(pb), aiCount: pc };
+  });
 
-            // 模拟异步处理，防止阻塞 UI
-            await new Promise(resolve => setTimeout(resolve, 600));
+  return { 
+    score: aiScore, 
+    per: Math.round(perScore), 
+    bur: Math.round(burScore), 
+    templates: [...new Set(templateHits)], 
+    paraDetails 
+  };
+}
 
-            try {
-                // 1. 分段处理
-                const paragraphs = text.split(/\n+/).filter(p => p.trim().length > 10);
-                
-                // 2. 全局分析
-                const globalStats = analyzeGlobal(text, paragraphs);
-                
-                // 3. 渲染结果
-                renderResults(globalStats, paragraphs);
-                
-                results.classList.add('active');
-            } catch (error) {
-                console.error('分析出错:', error);
-                alert('分析过程中出现错误，请检查文章内容格式。');
-            } finally {
-                loading.style.display = 'none';
-                analyzeBtn.disabled = false;
-                analyzeBtn.textContent = '⚡ 一键全检';
-            }
-        }
 
-        function analyzeGlobal(text, paragraphs) {
-            // AI 特征词统计
-            let aiCount = 0;
-            const foundKeywords = [];
-            AI_KEYWORDS.forEach(word => {
-                const regex = new RegExp(word, 'g');
-                const matches = text.match(regex);
-                if (matches) {
-                    aiCount += matches.length;
-                    foundKeywords.push(word);
-                }
-            });
+function analyzeTraffic(text) {
+  const sents = splitSentences(text);
+  const chars = text.replace(/\s/g,'');
+  const first = sents[0]||'';
+  const hook = Math.min(100, (first.match(/你 | 为什么 | 如何 | 揭秘 | 干货 | 痛点 | 真相 | 别再 | 终于/gi)?35:10)+(first.length>15&&first.length<40?25:5)+(sents.length>2?15:0)+(text.match(/#|🔥|⚠️|💡|👉/g)?.length*5||0));
+  const readability = Math.min(100, 100 - Math.abs((chars.length/(sents.length||1))-25)*1.5);
+  const emotion = Math.min(100, 30 + (chars.match(/惊喜 | 震惊 | 感动 | 焦虑 | 兴奋 | 痛苦 | 热爱 | 讨厌 | 支持 | 反对 | 点赞 | 转发 | 绝了 | 救命/gi)?.length||0)*8);
+  const structure = Math.min(100, (text.match(/\d+\.|[\-\*•]/g)?.length?15:5)+(text.match(/一 | 二|三 | 首先 | 其次 | 最后/gi)?.length*5||10)+(splitParagraphs(text).filter(p=>p.length<60).length/splitParagraphs(text).length*40||20));
+  const tier = (hook+readability+emotion+structure)/4;
+  
+  // 基于真实数据动态计算平台匹配度
+  const plats = [];
+  const paraCount = splitParagraphs(text).length;
+  const avgParaLen = chars.length / (paraCount || 1);
+  const hasEmojis = (text.match(/[🔥⚠️💡👉✨✅❌📊📈🎯]/g)||[]).length > 0;
+  const hasHashTags = (text.match(/#/g)||[]).length >= 2;
+  const isLongForm = chars.length > 500;
+  const hasQuestions = (text.match(/[？?]/g)||[]).length >= 2;
+  const hasLists = (text.match(/\d+\.|[\-\*•]\s/g)||[]).length >= 3;
+  const hasStrongHook = hook > 60;
+  const isProfessional = (text.match(/研究 | 数据 | 分析 | 结论 | 专业 | 深度 | 干货/gi)||[]).length >= 2;
+  
+  // 小红书评分逻辑：碎片化、情绪钩子、emoji、标签
+  let xhsScore = 50;
+  if (hasStrongHook) xhsScore += 20;
+  if (hasEmojis) xhsScore += 15;
+  if (hasHashTags) xhsScore += 10;
+  if (paraCount >= 5 && avgParaLen < 50) xhsScore += 5;
+  if (emotion > 60) xhsScore += 10;
+  xhsScore = Math.min(98, Math.max(40, xhsScore));
+  if (xhsScore >= 70) {
+    plats.push({
+      name: '小红书',
+      score: xhsScore,
+      reason: `碎片化${paraCount>=5?'✓':'✗'} + 情绪钩子${hasStrongHook?'强':'一般'} + ${hasEmojis?'Emoji丰富':'需加表情'} + ${hasHashTags?'话题标签':'需加#标签'}`
+    });
+  }
+  
+  // 公众号评分逻辑：深度阅读、逻辑完整、长文
+  let mpScore = 50;
+  if (isLongForm) mpScore += 15;
+  if (readability > 65) mpScore += 20;
+  if (hasLists) mpScore += 15;
+  if (paraCount >= 4) mpScore += 10;
+  if (structure > 60) mpScore += 10;
+  mpScore = Math.min(98, Math.max(40, mpScore));
+  if (mpScore >= 65) {
+    plats.push({
+      name: '公众号',
+      score: mpScore,
+      reason: `深度阅读${isLongForm?'✓':'偏短'} + 逻辑${hasLists?'清晰':'待优化'} + ${paraCount>=4?'分段合理':'段落较少'} + 适合${chars.length>300?'中长文':'短文'}`
+    });
+  }
+  
+  // 今日头条评分逻辑：资讯算法、强钩子、完播率
+  let ttScore = 50;
+  if (hasStrongHook) ttScore += 25;
+  if (chars.length > 300) ttScore += 15;
+  if (readability > 55) ttScore += 15;
+  if (emotion > 50) ttScore += 10;
+  if (first.length > 20 && first.length < 35) ttScore += 10;
+  ttScore = Math.min(98, Math.max(40, ttScore));
+  if (ttScore >= 65) {
+    plats.push({
+      name: '今日头条',
+      score: ttScore,
+      reason: `资讯算法${hasStrongHook?'偏好':'需强化'} + ${first.length>15?'强钩子开头':'首句待优化'} + ${chars.length>300?'中长篇':'篇幅偏短'} + 完播率${readability>60?'高':'中'}`
+    });
+  }
+  
+  // 知乎评分逻辑：干货结构、专业度、长尾流量
+  let zhScore = 50;
+  if (hasLists) zhScore += 20;
+  if (isProfessional) zhScore += 20;
+  if (hasQuestions) zhScore += 15;
+  if (readability > 70) zhScore += 15;
+  if (paraCount >= 5) zhScore += 10;
+  zhScore = Math.min(98, Math.max(40, zhScore));
+  if (zhScore >= 60) {
+    plats.push({
+      name: '知乎',
+      score: zhScore,
+      reason: `干货${hasLists?'结构':'待完善'} + ${isProfessional?'专业度高':'需加强深度'} + ${hasQuestions?'问题驱动':'陈述为主'} + ${readability>70?'长尾流量好':'一般'}`
+    });
+  }
+  
+  // 如果没有平台达到阈值，添加一个默认建议
+  if (plats.length === 0) {
+    plats.push({
+      name: '全平台通用',
+      score: Math.round(tier),
+      reason: `综合评分${Math.round(tier)}分，建议先优化${hook<50?'开头钩子、':''}${readability<60?'可读性、':''}${structure<50?'结构排版、':''}再发布`
+    });
+  }
+  
+  // 按分数降序排序
+  plats.sort((a, b) => b.score - a.score);
 
-            // 敏感词统计
-            let sensitiveCount = 0;
-            SENSITIVE_WORDS.forEach(word => {
-                if (text.includes(word)) sensitiveCount++;
-            });
+  return { hook, readability, emotion, structure, tier, plats };
+}
 
-            // 标题分析 (取第一行或前 20 字)
-            const firstLine = text.split('\n')[0].trim();
-            const titleLen = firstLine.length;
-            let clickbaitScore = 0;
-            const foundClickbaits = [];
-            CLICKBAIT_WORDS.forEach(word => {
-                if (firstLine.includes(word)) {
-                    clickbaitScore += 20;
-                    foundClickbaits.push(word);
-                }
-            });
-            if (titleLen > 30 && firstLine.includes('?')) clickbaitScore += 10;
-            if (titleLen < 5) clickbaitScore += 20; // 太短也不正常
+function analyzeLogic(text) {
+  const paras = splitParagraphs(text);
+  const sents = splitSentences(text);
+  if(paras.length<2) return {score:0,coherence:[],trans:0,echo:0,issues:['段落不足，无法分析逻辑结构']};
+  
+  const coherence = [];
+  for(let i=0;i<paras.length-1;i++){
+    const w1=new Set(paras[i].replace(/[^\u4e00-\u9fa5a-zA-Z]/g,'').split(''));
+    const w2=new Set(paras[i+1].replace(/[^\u4e00-\u9fa5a-zA-Z]/g,'').split(''));
+    const inter=[...w1].filter(c=>w2.has(c)).length;
+    const union=new Set([...w1,...w2]).size;
+    coherence.push({pair:`${i+1}→${i+2}`,score:Math.round(union>0?(inter/union)*100:0)});
+  }
+  const transCount = countMatch(text, /因此|所以|然而|但是|而且|另外|此外|更重要的是|反观|由此可见|换言之|也就是说|具体而言|总结来说/g);
+  const transDensity = (transCount / (sents.length||1)) * 100;
+  const echo = Math.min(100, [...new Set(sents[0].substring(0,15).split(''))].filter(w=>new Set(sents[sents.length-1].substring(0,15).split('')).has(w)).length * 6);
+  
+  const score = Math.min(100, Math.round(coherence.reduce((a,b)=>a+b.score,0)/(coherence.length||1)*0.4 + Math.min(transDensity/1.5, 30)*0.3 + echo*0.2 + 10));
+  const issues = [];
+  if(transDensity < 2.5) issues.push('逻辑连接词偏少（<2.5/句），段落过渡可能生硬，建议补充“因此/更重要的是/反观”等桥梁词。');
+  if(echo < 12) issues.push('首尾呼应较弱，结尾未回扣开头核心观点，建议增加“总结/升华/回扣”句形成闭环。');
+  if(coherence.some(c=>c.score<20)) issues.push('存在段落主题跳跃现象，建议在断裂处增加1-2句承上启下的过渡句。');
+  
+  return { score, coherence, transDensity: Math.round(transDensity*10)/10, echo, issues };
+}
 
-            // 口水文检测
-            let watermarkScore = 0;
-            WATERMARK_PATTERNS.forEach(pat => {
-                const matches = text.match(pat);
-                if (matches) watermarkScore += matches.length;
-            });
-            const isWatermark = watermarkScore > 5;
+function analyzeSensitive(text) {
+  const hits = [];
+  const SENSITIVE = {high:['暴力','血腥','恐怖','自杀','毒品','赌博','诈骗','邪教','反动','颠覆','暗杀','分裂'],mid:['最|第一|首选|国家级|绝对|包治|根治|百分百|稳赚|保本|无风险|躺赚|秒杀|免费领|加微信|扫码|点击链接|立即购买','虚假|夸大|歧视|侮辱|诽谤|谣言|顶级|巅峰|跳楼价|骨折价'],low:['死|杀|骗|偷|抢|黄|毒|病|癌|崩|垮|毁|碎|烂|臭|腥|污|脏|乱|差|坏|恶|凶|狠']};
+  
+  const checkWord = (w, type, text) => {
+    const regex = new RegExp(w, 'gi');
+    let match;
+    while((match = regex.exec(text)) !== null) {
+      const start = Math.max(0, match.index - 8);
+      const end = Math.min(text.length, match.index + match[0].length + 8);
+      const context = text.substring(start, end);
+      const pIndex = text.substring(0, match.index).split(/\n/).length;
+      const pText = text.split(/\n/)[pIndex-1] || '';
+      hits.push({ word: match[0], type, context: `...${context}...`, para: pIndex, fullPara: pText.substring(0, 30)+'...' });
+    }
+  };
 
-            // 限流指数计算 (0-100)
-            const sensitiveRatio = Math.min(sensitiveCount * 10, 40);
-            const clickbaitRatio = Math.min(clickbaitScore, 30);
-            const watermarkRatio = isWatermark ? 20 : 0;
-            const limitIndex = Math.min(sensitiveRatio + clickbaitRatio + watermarkRatio, 100);
+  SENSITIVE.high.forEach(w => checkWord(w, '🔴 高危敏感'));
+  SENSITIVE.mid.forEach(w => checkWord(w, '🟡 广告法/绝对化'));
+  SENSITIVE.low.forEach(w => checkWord(w, '⚪ 潜在风险'));
+  
+  const riskScore = hits.filter(h=>h.type.includes('高危')).length*20 + hits.filter(h=>h.type.includes('广告')).length*8 + hits.filter(h=>h.type.includes('风险')).length*2;
+  return { score: Math.min(100, riskScore), level: riskScore>35?'高危':riskScore>10?'中危':'安全', hits: hits.slice(0,15) };
+}
 
-            // 内容深度评分
-            const avgLen = text.length / (paragraphs.length || 1);
-            const hasData = /\d+%|\d+ 元|\d+ 年/.test(text);
-            const hasStructure = /##|###|\d\./.test(text);
-            let depthScore = 50;
-            if (avgLen > 100) depthScore += 20;
-            if (hasData) depthScore += 20;
-            if (hasStructure) depthScore += 10;
-            if (text.length < 200) depthScore -= 20;
+function analyzeMarketing(text) {
+  const markers = [
+    {pat:/限时|限量|抢购|秒杀|特价|优惠|折扣|满减|赠品|包邮/g, label:'💰 促销诱导'},
+    {pat:/立即购买|点击购买|加入购物车|下单|付款|支付/g, label:'🔔 交易转化'},
+    {pat:/加微信|扫码|关注公众号|点击链接|私信|留言|评论区|主页|跳转/g, label:'🔗 引流导流'},
+    {pat:/性价比|爆款|网红|种草|必买|推荐|好物|神器|绝绝子|天花板|yyds/g, label:'🌿 种草背书'},
+    {pat:/保证|承诺|包退|包换|售后|保修|正品|原厂|授权|直供|一手/g, label:'🛡️ 信任承诺'},
+    {pat:/赚钱|暴富|月入|日赚|副业|兼职|创业|项目|风口|红利|财富/g, label:'💸 财富诱导'}
+  ];
+  const hits = [];
+  markers.forEach(m => {
+    let match; const re = new RegExp(m.pat.source, 'gi');
+    while((match = re.exec(text)) !== null) {
+      const pIdx = text.substring(0, match.index).split(/\n/).length;
+      const pTxt = text.split(/\n/)[pIdx-1] || '';
+      const ctxStart = Math.max(0, match.index - 10);
+      const ctxEnd = Math.min(text.length, match.index + match[0].length + 10);
+      hits.push({ word: match[0], label: m.label, para: pIdx, context: `...${text.substring(ctxStart, ctxEnd)}...`, fullPara: pTxt.substring(0,25)+'...' });
+    }
+  });
 
-            // 平台匹配度计算
-            const platforms = calculatePlatforms(text, paragraphs, hasData, hasStructure);
+  const density = (hits.length / (text.replace(/\s/g,'').length/50 || 1)) * 100;
+  const mktScore = Math.min(100, density*15 + (hits.filter(h=>h.label.includes('引流')||h.label.includes('财富')).length*10));
+  const type = mktScore>70?'硬广营销':mktScore>40?'软广/种草':mktScore>15?'轻度推广':'内容向/非营销';
+  return { score: Math.round(mktScore), type, hits: hits.slice(0,12) };
+}
 
-            return {
-                aiKeywords: foundKeywords,
-                aiProbability: Math.min((aiCount / (text.length / 50)) * 100, 99),
-                sensitiveCount,
-                limitIndex,
-                isWatermark,
-                titleScore: Math.max(0, 100 - clickbaitScore),
-                clickbaitWords: foundClickbaits,
-                depthScore,
-                platforms
-            };
-        }
+// ==================== 渲染引擎 ====================
+function renderAll() {
+  const text = document.getElementById('textInput').value.trim();
+  if(!text || text.length<10) return;
+  
+  const ai = analyzeAI(text);
+  const tr = analyzeTraffic(text);
+  const lg = analyzeLogic(text);
+  const sn = analyzeSensitive(text);
+  const mk = analyzeMarketing(text);
 
-        function calculatePlatforms(text, paragraphs, hasData, hasStructure) {
-            const len = text.length;
-            const hasEmoji = /[😀-🙏]/.test(text);
-            const hasHash = /#.*#/.test(text);
-            const shortPara = paragraphs.some(p => p.length < 40);
-            
-            // 小红书：碎片化 + 情绪 + Emoji
-            const xhsScore = 50 + (hasEmoji ? 20 : 0) + (hasHash ? 15 : 0) + (shortPara ? 15 : 0);
-            
-            // 公众号：深度 + 逻辑 + 长文
-            const wxScore = 50 + (len > 1000 ? 20 : 0) + (hasStructure ? 20 : 0) + (paragraphs.length > 5 ? 10 : 0);
-            
-            // 头条：热点 + 强开头
-            const ttScore = 50 + (len > 800 ? 10 : 0) + (text.slice(0, 50).includes('?') ? 20 : 0) + (hasData ? 15 : 0);
-            
-            // 知乎：专业 + 干货
-            const zhiScore = 50 + (hasData ? 25 : 0) + (hasStructure ? 20 : 0) + (len > 1500 ? 10 : 0);
+  // AI Tab
+  document.getElementById('tab-ai').innerHTML = `
+    <div class="card" style="margin-bottom:12px;"><div class="card-title"><div class="icon">🤖</div> AI生成概率深度解析</div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:15px;align-items:center;">
+        <div style="text-align:center;">${scoreCircle(ai.score, ai.score>60?'var(--danger)':ai.score>30?'var(--warning)':'var(--success)')}</div>
+        <div class="metrics-grid">
+          <div class="metric-item"><div class="metric-value" style="color:var(--accent-light)">${ai.per}</div><div class="metric-label">困惑度(Perplexity)</div></div>
+          <div class="metric-item"><div class="metric-value" style="color:var(--success)">${ai.bur}</div><div class="metric-label">句式突发性(Burstiness)</div></div>
+          <div class="metric-item"><div class="metric-value" style="color:var(--warning)">${ai.templates.length}</div><div class="metric-label">AI模板词命中</div></div>
+          <div class="metric-item"><div class="metric-value" style="color:var(--info)">${ai.paraDetails.length}</div><div class="metric-label">检测段落数</div></div>
+        </div>
+      </div>
+      <div class="explain-box"><strong>📘 指标说明：</strong><br>• <strong>困惑度</strong>：衡量文本用词的可预测性。值越高说明用词越随机、人类化；值过低说明词汇高度模式化（典型AI特征）。<br>• <strong>突发性</strong>：衡量句子长度变化幅度。人类写作通常长短句交错（突发性高）；AI倾向于均匀句式（突发性低）。<br>• <strong>模板词</strong>：AI大模型高频使用的过渡句与万能套话。命中越多，AI代写嫌疑越大。</div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-card" style="grid-column: span 2;"><h4>🔍 AI 特征词清单</h4>
+        ${ai.templates.length ? ai.templates.map(w=>`<span class="keyword-tag" style="background:rgba(225,112,85,0.15);color:var(--danger);border-color:rgba(225,112,85,0.3);margin:3px;display:inline-block;">${escapeHtml(w)}</span>`).join('') : '<div style="color:var(--success);padding:8px;font-size:0.82em;">✅ 未检测到典型 AI 句式模板</div>'}
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-card"><h4>📊 逐段 AI 热力</h4>
+        ${ai.paraDetails && ai.paraDetails.length > 0 ? ai.paraDetails.map((p,i)=>{
+          const c = p.score > 60 ? 'var(--danger)' : p.score > 30 ? 'var(--warning)' : 'var(--success)';
+          const tag = p.score > 60 ? 'tag-ai' : p.score > 30 ? 'tag-mixed' : 'tag-human';
+          const shortText = p.text && p.text.length > 50 ? p.text.substring(0, 50) + '...' : (p.text || '');
+          const displayScore = isNaN(p.score) ? 0 : p.score;
+          const displayPer = isNaN(p.per) ? 0 : p.per;
+          const displayBur = isNaN(p.bur) ? 0 : p.bur;
+          const displayAiCount = isNaN(p.aiCount) ? 0 : p.aiCount;
+          
+          return `<div class="para-item ${p.score>60?'ai-high':p.score>30?'ai-mid':'ai-low'}" style="margin-bottom:8px;padding:12px;border-radius:6px;background:rgba(0,0,0,0.05);border-left:3px solid ${c};">
+            <div class="para-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <strong style="color:var(--text);font-size:0.9em;">段落 ${i+1}</strong>
+              <span class="para-tag ${tag}" style="font-size:0.75em;padding:2px 8px;border-radius:3px;background:${c}22;color:${c};">${displayScore}% AI 概率</span>
+            </div>
+            <div class="progress-bar" style="height:6px;background:rgba(0,0,0,0.1);border-radius:3px;margin:6px 0;overflow:hidden;">
+              <div class="progress-fill" style="height:100%;width:${displayScore}%;background:${c};transition:width 0.3s;"></div>
+            </div>
+            <div class="para-text" style="margin:6px 0;padding:8px;background:rgba(0,0,0,0.08);border-radius:4px;font-size:0.8em;line-height:1.5;color:var(--text-sec);max-height:60px;overflow:hidden;">${escapeHtml(shortText)}</div>
+            <div class="para-scores" style="display:flex;gap:10px;justify-content:space-around;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:0.78em;">
+              <span title="困惑度越高越像 AI">📊 困惑度：<strong style="color:var(--accent-light)">${displayPer}</strong></span>
+              <span title="突发性越低越像 AI">⚡ 突发性：<strong style="color:var(--success)">${displayBur}</strong></span>
+              <span title="AI 模板词命中数">🏷️ 模板词：<strong style="color:var(--warning)">${displayAiCount}</strong></span>
+            </div>
+          </div>`;
+        }).join('') : '<div style="color:var(--text-sec);padding:15px;text-align:center;font-size:0.85em;">暂无段落数据，请输入文本进行分析</div>'}
+      </div>
+    </div>`;
 
-            return [
-                { name: '小红书', score: Math.min(xhsScore, 99), reasons: [`碎片化${shortPara?'✓':'✗'}`, `情绪钩子${hasEmoji?'✓':'✗'}`, `排版友好`, `话题标签${hasHash?'✓':'✗'}`] },
-                { name: '公众号', score: Math.min(wxScore, 99), reasons: [`深度阅读${len>1000?'✓':'✗'}`, `逻辑完整${hasStructure?'✓':'✗'}`, `适合长文`, `粉丝粘性` ] },
-                { name: '今日头条', score: Math.min(ttScore, 99), reasons: [`资讯算法`, `强钩子开头`, `中长篇`, `完播率高` ] },
-                { name: '知乎', score: Math.min(zhiScore, 99), reasons: [`干货结构${hasStructure?'✓':'✗'}`, `专业度高${hasData?'✓':'✗'}`, `长尾流量`, `理性讨论` ] }
-            ];
-        }
+  // Traffic Tab
+  document.getElementById('tab-traffic').innerHTML = `
+    <div class="card" style="margin-bottom:12px;"><div class="card-title"><div class="icon">📈</div> 流量潜力预测</div>
+      <div style="text-align:center;font-size:1.6em;font-weight:700;color:${tr.tier>70?'var(--success)':tr.tier>45?'var(--warning)':'var(--danger)'};margin:8px 0;">${tr.tier>70?'🔥 爆款潜力':tr.tier>45?'📈 稳健传播':'⚠️ 需深度优化'} (${Math.round(tr.tier)}分)</div>
+      <div class="metrics-grid">
+        <div class="metric-item"><div class="metric-value" style="color:var(--accent-light)">${Math.round(tr.hook)}</div><div class="metric-label">开头钩子力</div></div>
+        <div class="metric-item"><div class="metric-value" style="color:var(--info)">${Math.round(tr.readability)}</div><div class="metric-label">移动端可读性</div></div>
+        <div class="metric-item"><div class="metric-value" style="color:var(--warning)">${Math.round(tr.emotion)}</div><div class="metric-label">情绪张力值</div></div>
+        <div class="metric-item"><div class="metric-value" style="color:var(--success)">${Math.round(tr.structure)}</div><div class="metric-label">排版结构适配</div></div>
+      </div>
+      <div class="explain-box"><strong>📘 指标说明：</strong><br>• <strong>钩子力</strong>：评估首句是否包含痛点/悬念/利益点。决定用户“是否继续往下读”。<br>• <strong>可读性</strong>：基于平均句长与段落长度计算。手机端最佳句长 18-30 字，段落 3-4 行。<br>• <strong>情绪张力</strong>：检测能引发共鸣、好奇、焦虑、惊喜的词汇密度。高情绪值易触发评论/转发。<br>• <strong>结构适配</strong>：是否使用列表、小标题、短句。碎片化平台极度依赖此指标。</div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-card"><h4>🎯 推荐发布平台</h4>
+        ${tr.plats.length ? tr.plats.map(p=>`<div style="padding:6px 0;border-bottom:1px solid var(--border);"><div style="display:flex;justify-content:space-between;"><strong style="color:var(--accent-light)">${p.name}</strong><span style="color:var(--success);font-weight:600;">${p.score}分</span></div><div style="font-size:0.75em;color:var(--text-sec);margin-top:2px;">${p.reason}</div></div>`).join('') : '<div style="color:var(--text-sec);padding:10px;font-size:0.82em;">暂无强匹配平台，建议优化结构后重试</div>'}
+      </div>
+      <div class="detail-card"><h4>💡 流量优化动作</h4>
+        <div class="suggestion-item"><div class="suggestion-icon ${tr.hook>65?'good':'warn'}">✓</div><div class="suggestion-text">${tr.hook>65?'首段吸引力强，能留住前3秒':'首句太平淡，建议加入“你/为什么/揭秘/干货”等强钩子词'}</div></div>
+        <div class="suggestion-item"><div class="suggestion-icon ${tr.structure>60?'good':'warn'}">✓</div><div class="suggestion-text">${tr.structure>60?'分段合理，适配手机碎片阅读':'段落过长/过密，建议每3-4行断段，增加列表/小标题'}</div></div>
+      </div>
+    </div>`;
 
-        function renderResults(stats, paragraphs) {
-            // 1. 特征词
-            const tagContainer = document.getElementById('featureTags');
-            tagContainer.innerHTML = '';
-            if (stats.aiKeywords.length === 0) {
-                tagContainer.innerHTML = '<span class="tag success">✨ 未发现明显 AI 特征词</span>';
-            } else {
-                stats.aiKeywords.forEach(k => {
-                    const span = document.createElement('span');
-                    span.className = 'tag warning';
-                    span.textContent = k;
-                    tagContainer.appendChild(span);
-                });
-            }
+  // Logic Tab
+  document.getElementById('tab-logic').innerHTML = `
+    <div class="card" style="margin-bottom:12px;"><div class="card-title"><div class="icon">🧠</div> 内容逻辑与连贯性检测</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;align-items:center;">
+        <div style="text-align:center;">${scoreCircle(lg.score, lg.score>70?'var(--success)':lg.score>40?'var(--warning)':'var(--danger)')}</div>
+        <div>
+          <div class="detail-row"><span>段落主题连贯性</span><span>${Math.round(lg.coherence.reduce((a,b)=>a+b.score,0)/(lg.coherence.length||1))}%</span></div>
+          <div class="detail-row"><span>逻辑连接词密度</span><span>${lg.transDensity}个/句</span></div>
+          <div class="detail-row"><span>首尾呼应指数</span><span>${lg.echo}/100</span></div>
+        </div>
+      </div>
+      <div class="explain-box"><strong>📘 指标说明：</strong><br>• <strong>段落连贯性</strong>：通过相邻段落核心词重叠率计算。值越高，说明内容围绕同一主题层层递进；过低代表“东一榔头西一棒子”，逻辑断裂。<br>• <strong>连接词密度</strong>：代表显性逻辑链条的完整度。优质内容通常在 3.0~6.0/句 之间。过低像流水账，过高像学术论文。<br>• <strong>首尾呼应</strong>：检测开头与结尾的核心意象/关键词是否重合。高呼应代表文章“闭环完整”，能强化用户记忆点。</div>
+    </div>
+    <div class="card" style="margin-bottom:12px;"><div class="card-title">🔗 段落流转热力</div>
+      ${lg.coherence.map(c=>`<div class="detail-row" style="margin:5px 0;"><span style="width:55px;">${c.pair}</span><div style="flex:1;margin:0 8px;"><div class="detail-bar" style="height:6px;"><div class="detail-fill" style="width:${c.score}%;background:${c.score>40?'var(--success)':c.score>20?'var(--warning)':'var(--danger)'}"></div></div></div><span style="width:35px;text-align:right;">${c.score}%</span></div>`).join('')}
+    </div>
+    <div class="card"><div class="card-title">⚠️ 逻辑优化提示</div>
+      ${lg.issues.length ? lg.issues.map(i=>`<div class="suggestion-item"><div class="suggestion-icon warn">!</div><div class="suggestion-text">${escapeHtml(i)}</div></div>`).join('') : '<div class="suggestion-item"><div class="suggestion-icon good">✓</div><div class="suggestion-text">逻辑链条清晰，起承转合自然，论证层层递进。建议保持当前结构。</div></div>'}
+    </div>`;
 
-            // 2. 逐段热力图 (全屏网格)
-            const heatMap = document.getElementById('heatMap');
-            heatMap.innerHTML = '';
-            if (paragraphs.length === 0) {
-                heatMap.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#999;">未检测到有效段落</p>';
-            } else {
-                paragraphs.forEach((para, idx) => {
-                    // 简单的单段 AI 概率估算
-                    let pScore = 0;
-                    AI_KEYWORDS.forEach(w => { if(para.includes(w)) pScore += 15; });
-                    pScore = Math.min(pScore + (para.length > 200 ? 10 : 0), 95);
-                    if (pScore < 10) pScore = 10; // 保底
+  // Sensitive Tab
+  document.getElementById('tab-sensitive').innerHTML = `
+    <div class="card" style="margin-bottom:12px;"><div class="card-title"><div class="icon">🛡️</div> 敏感与违规词检测</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;align-items:center;">
+        <div style="text-align:center;">${scoreCircle(100-sn.score, sn.level==='高危'?'var(--danger)':sn.level==='中危'?'var(--warning)':'var(--success)')}</div>
+        <div>
+          <div class="detail-row"><span>综合合规等级</span><span class="${sn.level==='高危'?'risk-high':sn.level==='中危'?'risk-mid':'risk-low'}" style="font-weight:700;">${sn.level}</span></div>
+          <div class="detail-row"><span>命中违规词总数</span><span>${sn.hits.length} 个</span></div>
+          <div class="detail-row"><span>平台拦截概率</span><span>${sn.score>40?'>80%':sn.score>15?'30%-60%':'<10%'}</span></div>
+        </div>
+      </div>
+    </div>
+    ${sn.hits.length>0 ? `<div class="card"><div class="card-title">📍 触发定位详情</div>
+      ${sn.hits.map(h=>`<div class="trigger-item"><div class="trigger-loc">📌 第 ${h.para} 段触发 [${h.type}]</div><div class="trigger-context">"${h.context.replace(h.word, `<span class="trigger-word">${escapeHtml(h.word)}</span>`)}"</div><div style="margin-top:3px;font-size:0.75em;color:var(--text-sec);">所在段落开头：${escapeHtml(h.fullPara)}</div></div>`).join('')}
+      <div style="margin-top:10px;padding:8px;background:rgba(138,138,160,0.1);border-radius:6px;font-size:0.78em;color:var(--text-sec);line-height:1.5;">注：高亮词为系统匹配结果。实际发布请结合各平台最新《内容安全规范》人工复核上下文语境。</div>
+    </div>` : `<div class="card"><div class="suggestion-item"><div class="suggestion-icon good">✓</div><div class="suggestion-text">✅ 全文未检测到高危违规词与广告法禁用词，内容安全合规，可直接发布。</div></div></div>`}`;
 
-                    const color = pScore > 70 ? '#ef4444' : (pScore > 40 ? '#f59e0b' : '#10b981');
-                    const level = pScore > 70 ? 'high' : (pScore > 40 ? 'medium' : 'low');
-                    
-                    const card = document.createElement('div');
-                    card.className = 'segment-card';
-                    card.style.borderLeftColor = color;
-                    card.innerHTML = `
-                        <div class="segment-header">
-                            <span class="segment-title">段落 ${idx + 1}</span>
-                            <span class="ai-score ${level}">AI 概率：${Math.round(pScore)}%</span>
-                        </div>
-                        <div class="segment-text">${para.substring(0, 60)}${para.length>60?'...':''}</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${pScore}%; background: ${color};"></div>
-                        </div>
-                    `;
-                    heatMap.appendChild(card);
-                });
-            }
+  // Marketing Tab
+  document.getElementById('tab-marketing').innerHTML = `
+    <div class="card" style="margin-bottom:12px;"><div class="card-title"><div class="icon">🛒</div> 营销文与广告浓度检测</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;align-items:center;">
+        <div style="text-align:center;">${scoreCircle(100-mk.score, mk.score>70?'var(--danger)':mk.score>40?'var(--warning)':'var(--success)')}</div>
+        <div>
+          <div class="detail-row"><span>内容属性判定</span><span style="color:var(--accent-light);font-weight:700;">${mk.type}</span></div>
+          <div class="detail-row"><span>营销特征词命中</span><span>${mk.hits.length} 处</span></div>
+          <div class="detail-row"><span>自然流量干扰度</span><span>${mk.score>50?'高':'低'}</span></div>
+        </div>
+      </div>
+    </div>
+    ${mk.hits.length>0 ? `<div class="card"><div class="card-title">📍 营销触发定位</div>
+      ${mk.hits.map(h=>`<div class="trigger-item" style="border-color:var(--accent);"><div class="trigger-loc">📍 ${h.label} (第${h.para}段)</div><div class="trigger-context">"${h.context.replace(h.word, `<span class="trigger-word" style="background:rgba(108,92,231,0.2);color:var(--accent);border-color:var(--accent);padding:1px 3px;border-radius:3px;">${escapeHtml(h.word)}</span>`)}"</div><div style="margin-top:3px;font-size:0.75em;color:var(--text-sec);">段落片段：${escapeHtml(h.fullPara)}</div></div>`).join('')}
+    </div>` : `<div class="card"><div class="suggestion-item"><div class="suggestion-icon good">✓</div><div class="suggestion-text">✅ 营销浓度极低，内容以信息/情绪价值为主，非常适合自然流量分发。</div></div></div>`}`;
 
-            // 3. 限流检测
-            document.getElementById('limitScore').textContent = Math.round(stats.limitIndex) + '%';
-            const limitBadge = document.getElementById('limitStatus');
-            if (stats.limitIndex < 30) {
-                limitBadge.className = 'status-badge status-safe';
-                limitBadge.textContent = '安全';
-            } else if (stats.limitIndex < 60) {
-                limitBadge.className = 'status-badge status-risk';
-                limitBadge.textContent = '风险';
-            } else {
-                limitBadge.className = 'status-badge status-danger';
-                limitBadge.textContent = '高危';
-            }
-            document.getElementById('watermarkCheck').textContent = stats.isWatermark ? '是 (疑似)' : '否';
-            document.getElementById('watermarkCheck').style.color = stats.isWatermark ? 'var(--danger)' : 'var(--success)';
-            document.getElementById('sensitiveCount').textContent = stats.sensitiveCount;
+  // Report Tab
+  const total = Math.round(ai.score*0.2 + (100-tr.tier)*0.25 + (100-lg.score)*0.2 + sn.score*0.15 + mk.score*0.2);
+  const checklist = generateChecklist(ai, tr, lg, sn, mk, text);
+  document.getElementById('tab-report').innerHTML = `
+    <div class="card" style="margin-bottom:12px;"><div class="card-title"><div class="icon">📋</div> 综合诊断报告</div>
+      <div style="text-align:center;color:var(--text-sec);font-size:0.78em;margin-bottom:8px;">生成: ${new Date().toLocaleString('zh-CN')} | 文本: ${text.replace(/\s/g,'').length}字</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center;">
+        <div style="text-align:center;">${scoreCircle(Math.max(0, 100-total), total>60?'var(--danger)':total>30?'var(--warning)':'var(--success)')}</div>
+        <table class="report-table">
+          <tr><td>🤖 AI代写风险</td><td style="color:${ai.score>60?'var(--danger)':'var(--success)'}">${ai.score}%</td></tr>
+          <tr><td>📈 流量爆发潜力</td><td style="color:var(--info)">${Math.round(tr.tier)}分</td></tr>
+          <tr><td>🧠 逻辑连贯度</td><td style="color:${lg.score>60?'var(--success)':'var(--warning)'}">${lg.score}分</td></tr>
+          <tr><td>🛡️ 内容合规分</td><td style="color:${sn.score<15?'var(--success)':'var(--danger)'}">${100-sn.score}分</td></tr>
+          <tr><td>🛒 商业营销分</td><td style="color:${mk.score<30?'var(--success)':'var(--warning)'}">${mk.score}分</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">🚀 动态优化清单 (按优先级排序)</div>
+      ${checklist.map(c=>`<div class="suggestion-item"><div class="suggestion-icon ${c.p==='高'?'bad':c.p==='中'?'warn':'good'}">${c.p}</div><div class="suggestion-text"><strong>[${escapeHtml(c.cat)}]</strong> ${escapeHtml(c.txt)}</div></div>`).join('')}
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-secondary" onclick="exportReport('txt')">📄 导出TXT</button>
+        <button class="btn btn-secondary" onclick="exportReport('json')">📋 导出JSON</button>
+        <button class="btn btn-secondary" onclick="copyReport()">📋 复制摘要</button>
+      </div>
+    </div>`;
+    
+  updateRightPanel(ai, tr, lg, sn, mk);
+}
 
-            // 4. 标题合规
-            document.getElementById('titleScore').textContent = Math.round(stats.titleScore);
-            const titleBadge = document.getElementById('titleStatus');
-            if (stats.titleScore > 80) {
-                titleBadge.className = 'status-badge status-safe';
-                titleBadge.textContent = '合规';
-            } else if (stats.titleScore > 60) {
-                titleBadge.className = 'status-badge status-risk';
-                titleBadge.textContent = '需优化';
-            } else {
-                titleBadge.className = 'status-badge status-danger';
-                titleBadge.textContent = '违规风险';
-            }
-            document.getElementById('clickbaitLevel').textContent = stats.clickbaitWords.length > 0 ? '高' : '低';
-            document.getElementById('titleBanWords').textContent = stats.clickbaitWords.length > 0 ? stats.clickbaitWords.join(', ') : '无';
+function scoreCircle(s, c) { 
+  const safeS = (typeof s === 'number' && !isNaN(s)) ? s : 0;
+  const o = 2 * Math.PI * 42; 
+  return `<div class="score-circle"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42"/><circle class="progress" cx="50" cy="50" r="42" stroke="${c}" stroke-dasharray="${o}" stroke-dashoffset="${o - (safeS / 100) * o}"/></svg><div class="score-value"><div class="num" style="color:${c}">${safeS}</div><div class="label">评分📊</div></div></div>`; 
+}
 
-            // 5. 内容深度
-            const depthEl = document.getElementById('depthLevel');
-            const depthDesc = document.getElementById('depthDesc');
-            if (stats.depthScore > 80) {
-                depthEl.textContent = '优秀';
-                depthEl.style.color = 'var(--success)';
-                depthDesc.textContent = '内容丰富，逻辑清晰，具有高价值。';
-                document.getElementById('infoDensity').textContent = '高';
-                document.getElementById('logicStruct').textContent = '严谨';
-            } else if (stats.depthScore > 60) {
-                depthEl.textContent = '良好';
-                depthEl.style.color = 'var(--warning)';
-                depthDesc.textContent = '内容尚可，但缺乏独特观点或数据。';
-                document.getElementById('infoDensity').textContent = '中';
-                document.getElementById('logicStruct').textContent = '清晰';
-            } else {
-                depthEl.textContent = '一般';
-                depthEl.style.color = 'var(--danger)';
-                depthDesc.textContent = '内容较浅，建议增加深度和案例。';
-                document.getElementById('infoDensity').textContent = '低';
-                document.getElementById('logicStruct').textContent = '松散';
-            }
+function generateChecklist(ai, tr, lg, sn, mk, txt) {
+  const c = [];
+  if(ai.score > 60) c.push({p:'高',cat:'去AI化',txt:`AI概率 ${ai.score}% 偏高。第${ai.paraDetails.findIndex(p=>p.score>50)+1}段模板特征明显，建议替换为具体案例/个人数据/口语化短句，打破均匀句式节奏。`});
+  else if(ai.score > 30) c.push({p:'中',cat:'风格优化',txt:`存在轻微AI痕迹（困惑度 ${ai.per}）。可适当增加反问句、感叹句或行业黑话，提升文本“人类感”。`});
+  else c.push({p:'低',cat:'原创保持',txt:`AI风险极低，语言风格自然独特。建议保持当前表达习惯，可继续强化个人IP辨识度。`});
 
-            // 6. 智能建议
-            const sugList = document.getElementById('suggestionsList');
-            sugList.innerHTML = '';
-            const suggestions = [];
-            
-            if (stats.limitIndex > 30) suggestions.push('检查并移除可能的敏感内容或营销词汇，降低限流风险。');
-            if (stats.isWatermark) suggestions.push('减少无意义的重复字符和语气词，提升内容专业度。');
-            if (stats.titleScore < 80) suggestions.push('优化标题，避免夸大其词，提高点击率和合规性。');
-            if (stats.depthScore < 70) suggestions.push('增加更多具体案例和数据支持，增强内容的说服力。');
-            if (stats.aiProbability > 50) suggestions.push('增加情感表达和个人观点，减少机械感，让内容更具亲和力。');
-            
-            // 默认补充建议
-            if (suggestions.length < 5) suggestions.push('增加互动元素，在结尾提出问题引导用户评论。');
-            if (suggestions.length < 5) suggestions.push('优化关键词分布，在标题和首段自然融入核心词。');
-            if (suggestions.length < 5) suggestions.push('保持内容结构清晰，多用小标题和列表提升可读性。');
-            if (suggestions.length < 5) suggestions.push('平衡营销内容与实用信息的比例，提供真实价值。');
-            if (suggestions.length < 5) suggestions.push('根据目标平台特性调整内容长度和节奏。');
+  if(tr.hook < 60) c.push({p:'高',cat:'提流量',txt:`首段钩子力不足(${Math.round(tr.hook)}分)。请在前30字内植入用户痛点、反常识结论或明确利益承诺，降低跳出率。`});
+  if(tr.structure < 65) c.push({p:'中',cat:'排版',txt:`结构碎片化适配度偏低。建议：① 段落控制在4行内 ② 关键信息加粗 ③ 适当使用Emoji或列表符号降低视觉疲劳。`});
+  c.push({p:'低',cat:'发布策略',txt:`综合匹配 ${tr.plats.map(p=>`${p.name}(${p.score}分)`).join(' / ')}。建议优先投放高分平台，并根据平台调性微调标题前缀。`});
 
-            suggestions.forEach(text => {
-                const li = document.createElement('li');
-                li.className = 'suggestion-item';
-                li.innerHTML = `<span class="suggestion-icon">✓</span><span class="suggestion-text">${text}</span>`;
-                sugList.appendChild(li);
-            });
+  if(sn.score > 15) c.push({p:'高',cat:'保合规',txt:`检测到 ${sn.hits.length} 个风险/绝对化词汇。平台算法对高危词极其敏感，请立即替换为客观描述，避免限流或违规下架。`});
+  if(lg.score < 60) c.push({p:'中',cat:'理逻辑',txt:`逻辑连贯性 ${lg.score} 分。${lg.issues.join('；')}。建议在段落衔接处增加“由此可见/更重要的是/反观现状”等逻辑桥梁。`});
+  if(mk.score > 50) c.push({p:'中',cat:'软广优化',txt:`营销浓度过高(${mk.score}分)，易触发营销号判定。采用“痛点共鸣→场景代入→轻引导”结构，将推广信息埋入第3/4段，转化率更高且不易被限流。`});
+  
+  return c;
+}
 
-            // 7. 平台推荐
-            const platGrid = document.getElementById('platformGrid');
-            platGrid.innerHTML = '';
-            stats.platforms.sort((a,b) => b.score - a.score).forEach(p => {
-                const div = document.createElement('div');
-                div.className = 'platform-card';
-                let checksHtml = '';
-                p.reasons.forEach(r => {
-                    const ok = r.includes('✓');
-                    checksHtml += `<div class="check-item"><span class="${ok?'check-ok':'check-no'}">${ok?'●':'○'}</span> ${r.replace('✓','').replace('✗','')}</div>`;
-                });
-                
-                div.innerHTML = `
-                    <h4 style="color:var(--text); margin-bottom:5px;">${p.name}</h4>
-                    <div class="platform-score">${Math.round(p.score)}分</div>
-                    <div class="platform-reason">${p.reasons[0]} + ${p.reasons[1]}</div>
-                    <div class="check-list">${checksHtml}</div>
-                `;
-                platGrid.appendChild(div);
-            });
-        }
-    </script>
+function updateRightPanel(ai, tr, lg, sn, mk) {
+  document.getElementById('resultsPanel').innerHTML = `
+    <div class="card" style="margin-bottom:6px;"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82em;"><span>🤖 AI概率</span><span style="color:${ai.score>60?'var(--danger)':'var(--success)'};font-weight:700;">${ai.score}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${ai.score}%;background:${ai.score>60?'var(--danger)':'var(--success)'}"></div></div></div>
+    <div class="card" style="margin-bottom:6px;"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82em;"><span>📈 流量潜力</span><span style="color:var(--info);font-weight:700;">${Math.round(tr.tier)}分</span></div><div class="progress-bar"><div class="progress-fill" style="width:${tr.tier}%;background:var(--info)"></div></div></div>
+    <div class="card" style="margin-bottom:6px;"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82em;"><span>🧠 逻辑评分</span><span style="color:${lg.score>60?'var(--success)':'var(--warning)'};font-weight:700;">${lg.score}分</span></div><div class="progress-bar"><div class="progress-fill" style="width:${lg.score}%;background:${lg.score>60?'var(--success)':'var(--warning)'}"></div></div></div>
+    <div class="card" style="margin-bottom:6px;"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82em;"><span>🛡️ 合规安全</span><span style="color:${sn.score<15?'var(--success)':'var(--danger)'};font-weight:700;">${100-sn.score}分</span></div><div class="progress-bar"><div class="progress-fill" style="width:${100-sn.score}%;background:${sn.score<15?'var(--success)':'var(--danger)'}"></div></div></div>
+    <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82em;"><span>🛒 营销浓度</span><span style="color:${mk.score<30?'var(--success)':'var(--warning)'};font-weight:700;">${mk.score}分</span></div><div class="progress-bar"><div class="progress-fill" style="width:${mk.score}%;background:${mk.score<30?'var(--success)':'var(--warning)'}"></div></div><div style="text-align:center;font-size:0.7em;color:var(--text-sec);margin-top:4px;">点击上方标签查看完整报告与定位详情</div></div>`;
+}
+
+// ==================== 交互控制 ====================
+function runAllDetection() {
+  const t = document.getElementById('textInput').value.trim();
+  if(t.length<15) return alert('请输入至少15个字符的内容以获得精准分析！');
+  document.getElementById('loadingOverlay').classList.add('show');
+  setTimeout(()=>{ renderAll(); document.getElementById('fullResults').style.display='block'; document.getElementById('loadingOverlay').classList.remove('show'); }, 700);
+}
+
+function loadSample() { document.getElementById('textInput').value = `为什么你写的内容总是没人看？问题可能不出在文笔，而在于你根本不懂读者的“注意力规律”。
+
+在这个信息过载的时代，用户留给一篇内容的耐心通常不超过3秒。如果开头没有直接击中痛点或制造悬念，手指就会无情上滑。真正的高手，从不从“我觉得”开始，而是从“你一定遇到过…”切入。
+
+试着把长篇大论拆解成短句。手机屏幕很窄，超过4行就会触发视觉疲劳。多用小标题、加粗核心词、适当留白，这不是为了好看，而是为了降低大脑的处理成本。
+
+下次动笔前，先问自己：这篇文章能帮到谁？他们此刻最焦虑什么？我凭什么让他们相信？想透这三个问题，你的数据至少能提升50%。`; updateCounts(); }
+
+function loadAiSample() { document.getElementById('textInput').value = `首先，在当今社会，随着科技的不断进步，人工智能已经成为了一个不可或缺的重要组成部分。从某种意义上说，AI技术的发展为我们的生活带来了前所未有的便利。
+
+其次，值得注意的是，不可否认的是，人工智能在各个领域都发挥着重要的作用。无论是医疗、教育还是金融，AI都在为我们提供着更加高效、智能的解决方案。
+
+与此同时，从另一个角度来看，人工智能的发展也带来了一些挑战。在这个快节奏的时代，我们需要不断适应新技术带来的变化。与此同时，我们也需要关注技术发展所带来的伦理问题。
+
+总而言之，人工智能无疑是一个值得深入探讨的话题。综上所述，我们应该以开放的心态迎接AI时代的到来，同时也要保持理性思考，确保技术的发展始终服务于人类的福祉。`; updateCounts(); }
+
+function loadMarketingSample() { document.getElementById('textInput').value = `🔥限时秒杀！最后24小时！性价比天花板！不抢绝对后悔！
+
+家人们，今天必须给你们种草这款爆款神器！真的绝绝子，用了就回不去！以前熬夜脸垮得像老了十岁，现在直接重回颜值巅峰！
+
+✅ 原价299，现在只要99！✅ 买一送一，再送同款小样！✅ 扫码加客服，立刻领券立减50！
+
+别再犹豫了，库存仅剩最后50件，抢完立刻恢复原价！点击左下角购物车，马上带回家！保证正品，假一赔十，支持七天无理由退换！
+
+赶紧的，手慢无！评论区扣“想要”，我私你专属链接！冲就对了！`; updateCounts(); }
+
+function clearAll() {
+  document.getElementById('textInput').value = '';
+  document.getElementById('resultsPanel').innerHTML = `<div style="text-align:center;padding:30px 10px;color:var(--text-sec);"><div style="font-size:2.5em;margin-bottom:10px;">📤</div><p>请在左侧输入内容后点击“一键全检”</p><p style="font-size:0.8em;margin-top:5px;">系统将自动输出6大维度深度报告</p></div>`;
+  document.getElementById('fullResults').style.display = 'none';
+  updateCounts();
+}
+
+function updateCounts() {
+  const t = document.getElementById('textInput').value;
+  document.getElementById('charCount').textContent = t.replace(/\s/g,'').length;
+  document.getElementById('paraCount').textContent = splitParagraphs(t).length;
+  document.getElementById('sentenceCount').textContent = splitSentences(t).length;
+}
+
+document.getElementById('textInput').addEventListener('input', updateCounts);
+document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+}));
+
+// Theme & Manual Toggles
+const themeToggle = document.getElementById('themeToggle');
+themeToggle.addEventListener('click', () => {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  document.documentElement.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  themeToggle.textContent = isLight ? '🌙' : '☀️';
+});
+
+const manualToggle = document.getElementById('manualToggle');
+const manualPanel = document.getElementById('manualPanel');
+manualToggle.addEventListener('click', () => {
+  manualPanel.classList.toggle('show');
+  manualToggle.textContent = manualPanel.classList.contains('show') ? '📖' : '❌';
+});
+
+function exportReport(fmt) {
+  if(!document.getElementById('textInput').value.trim()) return alert('请先执行检测');
+  const ai = analyzeAI(document.getElementById('textInput').value);
+  const t = analyzeTraffic(document.getElementById('textInput').value);
+  const l = analyzeLogic(document.getElementById('textInput').value);
+  const s = analyzeSensitive(document.getElementById('textInput').value);
+  const m = analyzeMarketing(document.getElementById('textInput').value);
+  const d = {timestamp:new Date().toISOString(), ai, traffic:t, logic:l, sensitive:s, marketing:m};
+  const txt = `自媒体深度检测报告\n${'='.repeat(30)}\nAI:${ai.score}% | 流量:${Math.round(t.tier)}分 | 逻辑:${l.score}分\n合规:${100-s.score} | 营销:${m.score}(${m.type})\n${s.hits.length?'⚠️违规词:'+s.hits.length+'个':'✅内容安全'}\n${'='.repeat(30)}`;
+  const b = fmt==='json' ? new Blob([JSON.stringify(d,null,2)],{type:'application/json'}) : new Blob([txt],{type:'text/plain'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`report_${Date.now()}.${fmt}`; a.click();
+}
+
+function copyReport() {
+  if(!document.getElementById('textInput').value.trim()) return alert('请先执行检测');
+  const txt = `📊 内容检测速报\n━━━━━━━━━━━━━━\n🤖 AI:${analyzeAI(document.getElementById('textInput').value).score}%\n📈 流量:${Math.round(analyzeTraffic(document.getElementById('textInput').value).tier)}分\n🧠 逻辑:${analyzeLogic(document.getElementById('textInput').value).score}分\n🛡️ 合规:${100-analyzeSensitive(document.getElementById('textInput').value).score}分\n🛒 营销:${analyzeMarketing(document.getElementById('textInput').value).score}分 (${analyzeMarketing(document.getElementById('textInput').value).type})\n━━━━━━━━━━━━━━`;
+  navigator.clipboard.writeText(txt).then(()=>alert('✅ 已复制到剪贴板')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制');});
+}
+</script>
 </body>
 </html>
