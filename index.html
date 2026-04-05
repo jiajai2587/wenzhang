@@ -617,10 +617,10 @@ function renderAll() {
       <div style="display:grid;grid-template-columns:1fr 2fr;gap:15px;align-items:center;">
         <div style="text-align:center;">${scoreCircle(ai.score, ai.score>60?'var(--danger)':ai.score>30?'var(--warning)':'var(--success)')}</div>
         <div class="metrics-grid">
-          <div class="metric-item"><div class="metric-value" style="color:var(--accent-light)">${ai.per}</div><div class="metric-label">困惑度(Perplexity)</div></div>
-          <div class="metric-item"><div class="metric-value" style="color:var(--success)">${ai.bur}</div><div class="metric-label">句式突发性(Burstiness)</div></div>
-          <div class="metric-item"><div class="metric-value" style="color:var(--warning)">${ai.templates.length}</div><div class="metric-label">AI模板词命中</div></div>
-          <div class="metric-item"><div class="metric-value" style="color:var(--info)">${ai.paraDetails.length}</div><div class="metric-label">检测段落数</div></div>
+          <div class="metric-item"><div class="metric-value" style="color:var(--accent-light)">${escapeHtml(String(ai.per))}</div><div class="metric-label">困惑度(Perplexity)</div></div>
+          <div class="metric-item"><div class="metric-value" style="color:var(--success)">${escapeHtml(String(ai.bur))}</div><div class="metric-label">句式突发性(Burstiness)</div></div>
+          <div class="metric-item"><div class="metric-value" style="color:var(--warning)">${escapeHtml(String(ai.templates.length))}</div><div class="metric-label">AI模板词命中</div></div>
+          <div class="metric-item"><div class="metric-value" style="color:var(--info)">${escapeHtml(String(ai.paraDetails.length))}</div><div class="metric-label">检测段落数</div></div>
         </div>
       </div>
       <div class="explain-box"><strong>📘 指标说明：</strong><br>• <strong>困惑度</strong>：衡量文本用词的可预测性。值越高说明用词越随机、人类化；值过低说明词汇高度模式化（典型AI特征）。<br>• <strong>突发性</strong>：衡量句子长度变化幅度。人类写作通常长短句交错（突发性高）；AI倾向于均匀句式（突发性低）。<br>• <strong>模板词</strong>：AI大模型高频使用的过渡句与万能套话。命中越多，AI代写嫌疑越大。</div>
@@ -738,10 +738,10 @@ function renderAll() {
     <div class="card" style="margin-bottom:12px;"><div class="card-title"><div class="icon">📈</div> 流量潜力预测</div>
       <div style="text-align:center;font-size:1.6em;font-weight:700;color:${tr.tier>70?'var(--success)':tr.tier>45?'var(--warning)':'var(--danger)'};margin:8px 0;">${tr.tier>70?'🔥 爆款潜力':tr.tier>45?'📈 稳健传播':'⚠️ 需深度优化'} (${Math.round(tr.tier)}分)</div>
       <div class="metrics-grid">
-        <div class="metric-item"><div class="metric-value" style="color:var(--accent-light)">${Math.round(tr.hook)}</div><div class="metric-label">开头钩子力</div></div>
-        <div class="metric-item"><div class="metric-value" style="color:var(--info)">${Math.round(tr.readability)}</div><div class="metric-label">移动端可读性</div></div>
-        <div class="metric-item"><div class="metric-value" style="color:var(--warning)">${Math.round(tr.emotion)}</div><div class="metric-label">情绪张力值</div></div>
-        <div class="metric-item"><div class="metric-value" style="color:var(--success)">${Math.round(tr.structure)}</div><div class="metric-label">排版结构适配</div></div>
+        <div class="metric-item"><div class="metric-value" style="color:var(--accent-light)">${escapeHtml(String(Math.round(tr.hook)))}</div><div class="metric-label">开头钩子力</div></div>
+        <div class="metric-item"><div class="metric-value" style="color:var(--info)">${escapeHtml(String(Math.round(tr.readability)))}</div><div class="metric-label">移动端可读性</div></div>
+        <div class="metric-item"><div class="metric-value" style="color:var(--warning)">${escapeHtml(String(Math.round(tr.emotion)))}</div><div class="metric-label">情绪张力值</div></div>
+        <div class="metric-item"><div class="metric-value" style="color:var(--success)">${escapeHtml(String(Math.round(tr.structure)))}</div><div class="metric-label">排版结构适配</div></div>
       </div>
       <div class="explain-box"><strong>📘 指标说明：</strong><br>• <strong>钩子力</strong>：评估首句是否包含痛点/悬念/利益点。决定用户“是否继续往下读”。<br>• <strong>可读性</strong>：基于平均句长与段落长度计算。手机端最佳句长 18-30 字，段落 3-4 行。<br>• <strong>情绪张力</strong>：检测能引发共鸣、好奇、焦虑、惊喜的词汇密度。高情绪值易触发评论/转发。<br>• <strong>结构适配</strong>：是否使用列表、小标题、短句。碎片化平台极度依赖此指标。</div>
     </div>
@@ -761,15 +761,15 @@ function renderAll() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;align-items:center;">
         <div style="text-align:center;">${scoreCircle(lg.score, lg.score>70?'var(--success)':lg.score>40?'var(--warning)':'var(--danger)')}</div>
         <div>
-          <div class="detail-row"><span>段落主题连贯性</span><span>${Math.round(lg.coherence.reduce((a,b)=>a+b.score,0)/(lg.coherence.length||1))}%</span></div>
-          <div class="detail-row"><span>逻辑连接词密度</span><span>${lg.transDensity}个/句</span></div>
-          <div class="detail-row"><span>首尾呼应指数</span><span>${lg.echo}/100</span></div>
+          <div class="detail-row"><span>段落主题连贯性</span><span>${escapeHtml(String(Math.round(lg.coherence.reduce((a,b)=>a+b.score,0)/(lg.coherence.length||1))))}%</span></div>
+          <div class="detail-row"><span>逻辑连接词密度</span><span>${escapeHtml(String(lg.transDensity))}个/句</span></div>
+          <div class="detail-row"><span>首尾呼应指数</span><span>${escapeHtml(String(lg.echo))}/100</span></div>
         </div>
       </div>
       <div class="explain-box"><strong>📘 指标说明：</strong><br>• <strong>段落连贯性</strong>：通过相邻段落核心词重叠率计算。值越高，说明内容围绕同一主题层层递进；过低代表“东一榔头西一棒子”，逻辑断裂。<br>• <strong>连接词密度</strong>：代表显性逻辑链条的完整度。优质内容通常在 3.0~6.0/句 之间。过低像流水账，过高像学术论文。<br>• <strong>首尾呼应</strong>：检测开头与结尾的核心意象/关键词是否重合。高呼应代表文章“闭环完整”，能强化用户记忆点。</div>
     </div>
     <div class="card" style="margin-bottom:12px;"><div class="card-title">🔗 段落流转热力</div>
-      ${lg.coherence.map(c=>`<div class="detail-row" style="margin:5px 0;"><span style="width:55px;">${c.pair}</span><div style="flex:1;margin:0 8px;"><div class="detail-bar" style="height:6px;"><div class="detail-fill" style="width:${c.score}%;background:${c.score>40?'var(--success)':c.score>20?'var(--warning)':'var(--danger)'}"></div></div></div><span style="width:35px;text-align:right;">${c.score}%</span></div>`).join('')}
+      ${lg.coherence.map(c=>`<div class="detail-row" style="margin:5px 0;"><span style="width:55px;">${escapeHtml(c.pair)}</span><div style="flex:1;margin:0 8px;"><div class="detail-bar" style="height:6px;"><div class="detail-fill" style="width:${c.score}%;background:${c.score>40?'var(--success)':c.score>20?'var(--warning)':'var(--danger)'}"></div></div></div><span style="width:35px;text-align:right;">${escapeHtml(String(c.score))}%</span></div>`).join('')}
     </div>
     <div class="card"><div class="card-title">⚠️ 逻辑优化提示</div>
       ${lg.issues.length ? lg.issues.map(i=>`<div class="suggestion-item"><div class="suggestion-icon warn">!</div><div class="suggestion-text">${escapeHtml(i)}</div></div>`).join('') : '<div class="suggestion-item"><div class="suggestion-icon good">✓</div><div class="suggestion-text">逻辑链条清晰，起承转合自然，论证层层递进。建议保持当前结构。</div></div>'}
@@ -781,14 +781,14 @@ function renderAll() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;align-items:center;">
         <div style="text-align:center;">${scoreCircle(100-sn.score, sn.level==='高危'?'var(--danger)':sn.level==='中危'?'var(--warning)':'var(--success)')}</div>
         <div>
-          <div class="detail-row"><span>综合合规等级</span><span class="${sn.level==='高危'?'risk-high':sn.level==='中危'?'risk-mid':'risk-low'}" style="font-weight:700;">${sn.level}</span></div>
-          <div class="detail-row"><span>命中违规词总数</span><span>${sn.hits.length} 个</span></div>
+          <div class="detail-row"><span>综合合规等级</span><span class="${sn.level==='高危'?'risk-high':sn.level==='中危'?'risk-mid':'risk-low'}" style="font-weight:700;">${escapeHtml(sn.level)}</span></div>
+          <div class="detail-row"><span>命中违规词总数</span><span>${escapeHtml(String(sn.hits.length))} 个</span></div>
           <div class="detail-row"><span>平台拦截概率</span><span>${sn.score>40?'>80%':sn.score>15?'30%-60%':'<10%'}</span></div>
         </div>
       </div>
     </div>
     ${sn.hits.length>0 ? `<div class="card"><div class="card-title">📍 触发定位详情</div>
-      ${sn.hits.map(h=>`<div class="trigger-item"><div class="trigger-loc">📌 第 ${h.para} 段触发 [${h.type}]</div><div class="trigger-context">"${h.context.replace(h.word, `<span class="trigger-word">${escapeHtml(h.word)}</span>`)}"</div><div style="margin-top:3px;font-size:0.75em;color:var(--text-sec);">所在段落开头：${escapeHtml(h.fullPara)}</div></div>`).join('')}
+      ${sn.hits.map(h=>`<div class="trigger-item"><div class="trigger-loc">📌 第 ${h.para} 段触发 [${h.type}]</div><div class="trigger-context">"${escapeHtml(h.context).replace(escapeHtml(h.word), `<span class="trigger-word">${escapeHtml(h.word)}</span>`)}"</div><div style="margin-top:3px;font-size:0.75em;color:var(--text-sec);">所在段落开头：${escapeHtml(h.fullPara)}</div></div>`).join('')}
       <div style="margin-top:10px;padding:8px;background:rgba(138,138,160,0.1);border-radius:6px;font-size:0.78em;color:var(--text-sec);line-height:1.5;">注：高亮词为系统匹配结果。实际发布请结合各平台最新《内容安全规范》人工复核上下文语境。</div>
     </div>` : `<div class="card"><div class="suggestion-item"><div class="suggestion-icon good">✓</div><div class="suggestion-text">✅ 全文未检测到高危违规词与广告法禁用词，内容安全合规，可直接发布。</div></div></div>`}`;
 
@@ -798,14 +798,14 @@ function renderAll() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;align-items:center;">
         <div style="text-align:center;">${scoreCircle(100-mk.score, mk.score>70?'var(--danger)':mk.score>40?'var(--warning)':'var(--success)')}</div>
         <div>
-          <div class="detail-row"><span>内容属性判定</span><span style="color:var(--accent-light);font-weight:700;">${mk.type}</span></div>
-          <div class="detail-row"><span>营销特征词命中</span><span>${mk.hits.length} 处</span></div>
+          <div class="detail-row"><span>内容属性判定</span><span style="color:var(--accent-light);font-weight:700;">${escapeHtml(mk.type)}</span></div>
+          <div class="detail-row"><span>营销特征词命中</span><span>${escapeHtml(String(mk.hits.length))} 处</span></div>
           <div class="detail-row"><span>自然流量干扰度</span><span>${mk.score>50?'高':'低'}</span></div>
         </div>
       </div>
     </div>
     ${mk.hits.length>0 ? `<div class="card"><div class="card-title">📍 营销触发定位</div>
-      ${mk.hits.map(h=>`<div class="trigger-item" style="border-color:var(--accent);"><div class="trigger-loc">📍 ${h.label} (第${h.para}段)</div><div class="trigger-context">"${h.context.replace(h.word, `<span class="trigger-word" style="background:rgba(108,92,231,0.2);color:var(--accent);border-color:var(--accent);padding:1px 3px;border-radius:3px;">${escapeHtml(h.word)}</span>`)}"</div><div style="margin-top:3px;font-size:0.75em;color:var(--text-sec);">段落片段：${escapeHtml(h.fullPara)}</div></div>`).join('')}
+      ${mk.hits.map(h=>`<div class="trigger-item" style="border-color:var(--accent);"><div class="trigger-loc">📍 ${h.label} (第${h.para}段)</div><div class="trigger-context">"${escapeHtml(h.context).replace(escapeHtml(h.word), `<span class="trigger-word" style="background:rgba(108,92,231,0.2);color:var(--accent);border-color:var(--accent);padding:1px 3px;border-radius:3px;">${escapeHtml(h.word)}</span>`)}"</div><div style="margin-top:3px;font-size:0.75em;color:var(--text-sec);">段落片段：${escapeHtml(h.fullPara)}</div></div>`).join('')}
     </div>` : `<div class="card"><div class="suggestion-item"><div class="suggestion-icon good">✓</div><div class="suggestion-text">✅ 营销浓度极低，内容以信息/情绪价值为主，非常适合自然流量分发。</div></div></div>`}`;
 
   // Report Tab
@@ -883,7 +883,7 @@ function scoreCircle(s, c) {
 function generateChecklist(ai, tr, lg, sn, mk, txt) {
   const c = [];
   if(ai.score > 60) c.push({p:'高',cat:'去AI化',txt:`AI概率 ${ai.score}% 偏高。第${ai.paraDetails.findIndex(p=>p.score>50)+1}段模板特征明显，建议替换为具体案例/个人数据/口语化短句，打破均匀句式节奏。`});
-  else if(ai.score > 30) c.push({p:'中',cat:'风格优化',txt:`存在轻微AI痕迹（困惑度 ${ai.per}）。可适当增加反问句、感叹句或行业黑话，提升文本“人类感”。`});
+  else if(ai.score > 30) c.push({p:'中',cat:'风格优化',txt:`存在轻微AI痕迹（困惑度 ${escapeHtml(String(ai.per))}）。可适当增加反问句、感叹句或行业黑话，提升文本“人类感”。`});
   else c.push({p:'低',cat:'原创保持',txt:`AI风险极低，语言风格自然独特。建议保持当前表达习惯，可继续强化个人IP辨识度。`});
 
   if(tr.hook < 60) c.push({p:'高',cat:'提流量',txt:`首段钩子力不足(${Math.round(tr.hook)}分)。请在前30字内植入用户痛点、反常识结论或明确利益承诺，降低跳出率。`});
