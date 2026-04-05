@@ -523,14 +523,29 @@ function analyzeMarketing(text) {
 
 // ==================== 渲染引擎 ====================
 function renderAll() {
-  const text = document.getElementById('textInput').value.trim();
-  if(!text || text.length<10) return;
-  
-  const ai = analyzeAI(text);
-  const tr = analyzeTraffic(text);
-  const lg = analyzeLogic(text);
-  const sn = analyzeSensitive(text);
-  const mk = analyzeMarketing(text);
+  try {
+    const text = document.getElementById('textInput').value.trim();
+    if(!text || text.length<10) {
+      console.warn('文本太短或为空');
+      return;
+    }
+    
+    console.log('开始分析，文本长度:', text.length);
+    
+    const ai = analyzeAI(text);
+    console.log('AI 分析完成:', ai.score);
+    
+    const tr = analyzeTraffic(text);
+    console.log('流量分析完成');
+    
+    const lg = analyzeLogic(text);
+    console.log('逻辑分析完成');
+    
+    const sn = analyzeSensitive(text);
+    console.log('敏感词分析完成');
+    
+    const mk = analyzeMarketing(text);
+    console.log('营销分析完成');
 
   // AI Tab
   document.getElementById('tab-ai').innerHTML = `
@@ -782,16 +797,24 @@ function renderAll() {
       </div>
     </div>`;
     
-  updateRightPanel(ai, tr, lg, sn, mk);
+  } catch (e) {
+    console.error('渲染错误:', e);
+    alert('分析过程中出现错误：' + e.message);
+  }
 }
 
-function scoreCircle(s, c) { 
-  const safeS = (typeof s === 'number' && !isNaN(s)) ? s : 0;
-  const o = 2 * Math.PI * 42; 
-  return `<div class="score-circle"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42"/><circle class="progress" cx="50" cy="50" r="42" stroke="${c}" stroke-dasharray="${o}" stroke-dashoffset="${o - (safeS / 100) * o}"/></svg><div class="score-value"><div class="num" style="color:${c}">${safeS}</div><div class="label">评分📊</div></div></div>`; 
+function updateRightPanel(ai, tr, lg, sn, mk) {
+  try {
+    document.getElementById('resultsPanel').innerHTML = `
+      <div class="card" style="margin-bottom:6px;"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82em;"><span>🤖 AI 概率</span><span style="color:${ai.score>60?'var(--danger)':'var(--success)'};font-weight:700;">${ai.score}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${ai.score}%;background:${ai.score>60?'var(--danger)':'var(--success)'}"></div></div></div>
+      <div class="card" style="margin-bottom:6px;"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82em;"><span>📈 流量潜力</span><span style="color:var(--info);font-weight:700;">${Math.round(tr.tier)}分</span></div><div class="progress-bar"><div class="progress-fill" style="width:${tr.tier}%;background:var(--info)"></div></div></div>
+      <div class="card" style="margin-bottom:6px;"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82em;"><span>🧠 逻辑评分</span><span style="color:${lg.score>60?'var(--success)':'var(--warning)'};font-weight:700;">${lg.score}分</span></div><div class="progress-bar"><div class="progress-fill" style="width:${lg.score}%;background:${lg.score>60?'var(--success)':'var(--warning)'}"></div></div></div>
+      <div class="card" style="margin-bottom:6px;"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82em;"><span>🛡️ 合规安全</span><span style="color:${sn.score<15?'var(--success)':'var(--danger)'};font-weight:700;">${100-sn.score}分</span></div><div class="progress-bar"><div class="progress-fill" style="width:${100-sn.score}%;background:${sn.score<15?'var(--success)':'var(--danger)'}"></div></div></div>
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82em;"><span>🛒 营销浓度</span><span style="color:${mk.score<30?'var(--success)':'var(--warning)'};font-weight:700;">${mk.score}分</span></div><div class="progress-bar"><div class="progress-fill" style="width:${mk.score}%;background:${mk.score<30?'var(--success)':'var(--warning)'}"></div></div><div style="text-align:center;font-size:0.7em;color:var(--text-sec);margin-top:4px;">点击上方标签查看完整报告与定位详情</div></div>`;
+  } catch (e) {
+    console.error('右侧面板更新错误:', e);
+  }
 }
-
-function generateChecklist(ai, tr, lg, sn, mk, txt) {
   const c = [];
   if(ai.score > 60) c.push({p:'高',cat:'去AI化',txt:`AI概率 ${ai.score}% 偏高。第${ai.paraDetails.findIndex(p=>p.score>50)+1}段模板特征明显，建议替换为具体案例/个人数据/口语化短句，打破均匀句式节奏。`});
   else if(ai.score > 30) c.push({p:'中',cat:'风格优化',txt:`存在轻微AI痕迹（困惑度 ${ai.per}）。可适当增加反问句、感叹句或行业黑话，提升文本“人类感”。`});
