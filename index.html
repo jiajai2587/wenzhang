@@ -548,8 +548,8 @@ function renderAll() {
         ${ai.templates.length ? ai.templates.map(w=>`<span class="keyword-tag" style="background:rgba(225,112,85,0.15);color:var(--danger);border-color:rgba(225,112,85,0.3);margin:3px;display:inline-block;">${escapeHtml(w)}</span>`).join('') : '<div style="color:var(--success);padding:8px;font-size:0.82em;">✅ 未检测到典型 AI 句式模板</div>'}
       </div>
     </div>
-    <div class="detail-grid">
-      <div class="detail-card"><h4>📊 逐段 AI 热力</h4>
+    <div class="detail-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+      <div class="detail-card" style="grid-column: 1 / -1;"><h4>📊 逐段 AI 热力</h4>
         ${ai.paraDetails && ai.paraDetails.length > 0 ? ai.paraDetails.map((p,i)=>{
           const c = p.score > 60 ? 'var(--danger)' : p.score > 30 ? 'var(--warning)' : 'var(--success)';
           const tag = p.score > 60 ? 'tag-ai' : p.score > 30 ? 'tag-mixed' : 'tag-human';
@@ -576,6 +576,79 @@ function renderAll() {
           </div>`;
         }).join('') : '<div style="color:var(--text-sec);padding:15px;text-align:center;font-size:0.85em;">暂无段落数据，请输入文本进行分析</div>'}
       </div>
+    </div>
+    
+    <!-- 限流风险检测 -->
+    <div class="detail-grid" style="margin-top: 15px;">
+      <div class="detail-card"><h4>🛡️ 限流风险检测</h4>
+        <div style="margin: 10px 0;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.85em;">
+            <span style="color:var(--text-sec);">限流指数</span>
+            <span id="riskIndexVal" style="font-weight:bold;color:var(--danger);">0%</span>
+          </div>
+          <div style="width:100%;height:8px;background:rgba(0,0,0,0.1);border-radius:4px;overflow:hidden;">
+            <div id="riskIndexBar" class="progress-fill" style="height:100%;width:0%;background:var(--danger);"></div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px dashed var(--border);font-size:0.85em;">
+          <span style="color:var(--text-sec);">限流状态</span>
+          <span id="riskStatus" style="padding:2px 8px;border-radius:3px;background:rgba(0,184,148,0.2);color:var(--success);font-weight:600;">安全</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px dashed var(--border);font-size:0.85em;">
+          <span style="color:var(--text-sec);">口水文检测</span>
+          <span id="watermarkStatus" style="font-weight:600;color:var(--success);">否</span>
+        </div>
+        <div style="margin-top:8px;font-size:0.8em;">
+          <span style="color:var(--text-sec);display:block;margin-bottom:4px;">敏感内容:</span>
+          <div id="sensitiveWords" style="color:var(--danger);min-height:20px;">无检测到敏感词</div>
+        </div>
+      </div>
+      
+      <!-- 标题合规检测 -->
+      <div class="detail-card"><h4>📝 标题合规检测</h4>
+        <div style="text-align:center;padding:10px 0;">
+          <div id="titleScore" style="font-size:2em;font-weight:bold;color:var(--info);">0</div>
+          <div style="font-size:0.75em;color:var(--text-sec);">合规评分</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px dashed var(--border);font-size:0.85em;">
+          <span style="color:var(--text-sec);">标题党指数</span>
+          <span id="clickbaitLevel" style="font-weight:600;color:var(--success);">低</span>
+        </div>
+        <div style="margin-top:8px;font-size:0.8em;">
+          <span style="color:var(--text-sec);display:block;margin-bottom:4px;">潜在违禁词:</span>
+          <div id="titleViolations" style="color:var(--warning);min-height:20px;">无</div>
+        </div>
+        <div id="titleAdvice" style="margin-top:8px;padding:6px;background:rgba(9,132,227,0.1);border-radius:4px;font-size:0.75em;color:var(--text-sec);">请输入标题进行检测</div>
+      </div>
+      
+      <!-- 内容深度状态 -->
+      <div class="detail-card"><h4>💡 内容深度状态</h4>
+        <div style="text-align:center;padding:10px 0;">
+          <div id="depthLevel" style="font-size:1.3em;font-weight:bold;color:var(--accent-light);">待评估</div>
+          <div style="font-size:0.75em;color:var(--text-sec);">质量评级</div>
+        </div>
+        <div style="margin-top:10px;font-size:0.85em;">
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--border);">
+            <span style="color:var(--text-sec);">信息密度</span>
+            <span id="infoDensity" style="font-weight:600;">-</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--border);">
+            <span style="color:var(--text-sec);">逻辑结构</span>
+            <span id="logicStructure" style="font-weight:600;">-</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;">
+            <span style="color:var(--text-sec);">观点独创</span>
+            <span id="originality" style="font-weight:600;">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 智能优化建议 -->
+    <div class="detail-card" style="margin-top: 15px;"><h4>🚀 智能优化建议</h4>
+      <ul id="smartSuggestions" style="list-style:none;padding:0;margin:10px 0;">
+        <li style="padding:8px;color:var(--text-sec);font-size:0.85em;">等待检测结果生成建议...</li>
+      </ul>
     </div>`;
 
   // Traffic Tab
@@ -679,6 +752,43 @@ function renderAll() {
       </div>
     </div>`;
     
+  // 更新限流风险检测面板
+  document.getElementById('riskIndexVal').textContent = Math.round(riskScore) + '%';
+  document.getElementById('riskIndexBar').style.width = riskScore + '%';
+  document.getElementById('riskIndexBar').style.background = riskColor;
+  document.getElementById('riskStatus').textContent = riskLevel;
+  document.getElementById('riskStatus').className = '';
+  document.getElementById('riskStatus').style.background = riskScore > 60 ? 'rgba(225,112,85,0.2)' : riskScore > 30 ? 'rgba(253,203,110,0.2)' : 'rgba(0,184,148,0.2)';
+  document.getElementById('riskStatus').style.color = riskColor;
+  document.getElementById('watermarkStatus').textContent = isWatermark ? '是' : '否';
+  document.getElementById('watermarkStatus').style.color = isWatermark ? 'var(--warning)' : 'var(--success)';
+  
+  const sensWords = sn.hits.slice(0, 5).map(h => h.word).join(', ');
+  document.getElementById('sensitiveWords').textContent = sensWords || '无检测到敏感词';
+  
+  // 更新标题合规检测面板
+  document.getElementById('titleScore').textContent = Math.round(titleScore);
+  document.getElementById('clickbaitLevel').textContent = clickbaitLevel;
+  document.getElementById('clickbaitLevel').style.color = clickbaitLevel === '高' ? 'var(--danger)' : clickbaitLevel === '中' ? 'var(--warning)' : 'var(--success)';
+  document.getElementById('titleViolations').textContent = clickbaitWords.join(', ') || '无';
+  document.getElementById('titleAdvice').textContent = titleScore > 80 ? '标题合规，可直接使用' : titleScore > 50 ? '建议微调部分词汇' : '标题需大幅优化';
+  
+  // 更新内容深度状态面板
+  document.getElementById('depthLevel').textContent = depthLevel.split(',')[0];
+  document.getElementById('depthLevel').style.color = depthLevel.includes('优秀') ? 'var(--success)' : depthLevel.includes('良好') ? 'var(--info)' : 'var(--warning)';
+  document.getElementById('infoDensity').textContent = infoDensity;
+  document.getElementById('logicStructure').textContent = logicStruct;
+  document.getElementById('originality').textContent = originality;
+  
+  // 更新智能优化建议
+  const allSuggestions = [...suggestions.map(s => ({...s, type: 'dynamic'}), ...riskAdvice.slice(0, 7).map(a => ({icon: 'warn', text: a, type: 'static'})))];
+  document.getElementById('smartSuggestions').innerHTML = allSuggestions.slice(0, 10).map(s => 
+    `<li style="padding:8px;background:rgba(0,0,0,0.05);border-radius:4px;margin-bottom:6px;font-size:0.85em;display:flex;gap:8px;align-items:flex-start;">
+      <span style="width:18px;height:18px;border-radius:50%;background:${s.icon==='good'?'rgba(0,184,148,0.2)':s.icon==='warn'?'rgba(253,203,110,0.2)':'rgba(225,112,85,0.2)'};color:${s.icon==='good'?'var(--success)':s.icon==='warn'?'var(--warning)':'var(--danger)'};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;flex-shrink:0;">${s.icon==='good'?'✓':s.icon==='warn'?'!':'✗'}</span>
+      <span style="color:var(--text-sec);line-height:1.4;">${s.text}</span>
+    </li>`
+  ).join('');
+  
   updateRightPanel(ai, tr, lg, sn, mk);
 }
 
